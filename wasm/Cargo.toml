@@ -9,3 +9,4 @@ debug = true
 
 [dependencies]
 fastly = "^0.6.0"
+regex = "1"
