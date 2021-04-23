@@ -128,17 +128,15 @@ fn main(mut req: Request) -> Result<Response, Error> {
                 is_bot = if bot_prob.eq("0.00") { "0" } else { "1" };
             }
 
-            if is_bot.eq("0") {
-                return Ok(req.send(NGROK_BACKEND)?)
-            }
-
-            /*if is_bot.eq("1") {
-                return Ok(Response::from_status(StatusCode::IM_A_TEAPOT)
+            if is_bot.eq("1") {
+                Ok(Response::from_status(StatusCode::IM_A_TEAPOT)
                     .with_content_type(mime::TEXT_HTML_UTF_8)
                     .with_header("fpjs-bot-status", bot_status)
                     .with_header("fpjs-is-bot", is_bot)
-                    .with_header("request-id", botd_request_id.as_str()));
-            }*/
+                    .with_header("request-id", botd_request_id.as_str()))
+            } else {
+                Ok(req.send(NGROK_BACKEND)?)
+            }
         }
 
         // If request is to a path starting with `/other/`...
