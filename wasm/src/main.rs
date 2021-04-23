@@ -1,8 +1,7 @@
 //! Default Compute@Edge template program.
 
-use fastly::http::{header, Method, StatusCode, HeaderValue};
+use fastly::http::{header, Method, StatusCode};
 use fastly::{mime, Error, Request, Response};
-use fastly::handle::client_request_and_body;
 use regex::Regex;
 
 /// The name of a backend server associated with this service.
@@ -73,7 +72,7 @@ fn main(mut req: Request) -> Result<Response, Error> {
         "/" => {
             // Request handling logic could go here...  E.g., send the request to an origin backend
             // and then cache the response for one minute.
-
+            req.set_ttl(5);
             let response = req.send(NGROK_BACKEND).unwrap();
             let new_response = add_script(Box::from(response.into_body_str()));
 
@@ -150,8 +149,4 @@ fn main(mut req: Request) -> Result<Response, Error> {
         _ => Ok(Response::from_status(StatusCode::NOT_FOUND)
             .with_body_str("The page you requested could not be found\n")),
     }
-
-    // client_request_and_body() {
-    //     req.with_body()
-    // }
 }
