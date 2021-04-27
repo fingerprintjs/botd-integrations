@@ -1,7 +1,7 @@
 //! Default Compute@Edge template program.
 
 use fastly::http::{header, Method, StatusCode, HeaderValue};
-use fastly::{mime, Error, Request, Response};
+use fastly::{mime, Error, Request, Response, Dictionary};
 use regex::Regex;
 
 /// The name of a backend server associated with this service.
@@ -20,6 +20,7 @@ const REQUEST_STATUS_HEADER: &str = "fpjs-request-status";
 const BOT_PROB_HEADER: &str = "fpjs-bot-prob";
 const REQUEST_ID_HEADER: &str = "fpjs-request-id";
 const IS_BOT_HEADER: &str = "fpjs-is-bot";
+const CHALLENGE_HEADER: &str = "fpjs-challenge-id";
 
 const COOKIE_FPJS_NAME: &str = "botd-request-id=";
 const COOKIE_HEADER: &str = "cookie";
@@ -90,6 +91,19 @@ fn allow_to_request(req: &Request) -> AllowingRequestResult {
         return AllowingRequestResult { allow_to_request: true, request_id: "".parse().unwrap() };
     }
     let fpjs_request_id = cookie_element.unwrap();
+
+    // Check if it was called after challenge solved
+    let challenge_option = get_header_value(req.get_header(CHALLENGE_HEADER));
+    if challenge_option.is_some() {
+        let challenge_id = challenge_option.unwrap();
+        // TODO: check challenge_id (send to botd backend)
+        let challenge_solved = true;
+        if challenge_solved {
+            return AllowingRequestResult { allow_to_request: true, request_id: fpjs_request_id };
+        } else {
+            return AllowingRequestResult { allow_to_request: false, request_id: fpjs_request_id };
+        }
+    }
 
     // Build request for bot detection
     let mut verify_request = Request::get(FPJS_URL);
@@ -177,6 +191,14 @@ fn main(mut req: Request) -> Result<Response, Error> {
             Ok(req.send(APP_BACKEND)?)
         }
 
+        "/captcha" => {
+            req.set_pass(true); // TODO: get rid of it
+            //return Ok(req.send(APP_BACKEND)?)
+            return Ok(Response::from_status(StatusCode::OK)
+                .with_content_type(mime::TEXT_HTML_UTF_8)
+                .with_body("hello"))
+        }
+
         "/login" => {
             let result = allow_to_request(&req);
             if result.allow_to_request {
@@ -184,8 +206,10 @@ fn main(mut req: Request) -> Result<Response, Error> {
                     .with_header(IS_BOT_HEADER, "0")
                     .with_header(REQUEST_ID_HEADER, result.request_id.as_str()))
             } else {
-                Ok(Response::from_status(900)
+                Ok(Response::from_status(303)
                     .with_content_type(mime::TEXT_HTML_UTF_8)
+                    .with_header("version", "4") // TODO: get rid of it (testing purpose)
+                    .with_header("Location","/captcha")
                     .with_header(IS_BOT_HEADER, "1")
                     .with_header(REQUEST_ID_HEADER, result.request_id.as_str()))
             }
