@@ -1,0 +1,6 @@
+*
+!.elasticbeanstalk
+!.ebextensions/*
+!bin/application
+!Procfile
+!*static/

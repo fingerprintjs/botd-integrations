@@ -3,7 +3,6 @@ package server
 import (
 	"encoding/json"
 	"github.com/sirupsen/logrus"
-	"io/ioutil"
 	"net/http"
 )
 
@@ -20,44 +19,18 @@ type MessageResult struct {
 	Message Description `json:"message"`
 }
 
-type LoginRequest struct {
-	Login    string `json:"login"`
-	Password string `json:"password"`
-}
-
 func loginHandler(w http.ResponseWriter, r *http.Request) {
 	setCorsAllowAll(w)
 
-	b, err := ioutil.ReadAll(r.Body)
+	err := r.ParseForm()
 	if err != nil {
-		err := json.NewEncoder(w).Encode(ErrorResult{
-			Error: Description{
-				Code:        http.StatusBadRequest,
-				Description: err.Error(),
-			},
-		})
-		if err != nil {
-			logrus.Warn("ErrorResult encode error: ", err.Error())
-		}
-		return
-	}
-	defer r.Body.Close()
-
-	var payload LoginRequest
-	if err = json.Unmarshal(b, &payload); err != nil {
-		err := json.NewEncoder(w).Encode(ErrorResult{
-			Error: Description{
-				Code:        http.StatusBadRequest,
-				Description: err.Error(),
-			},
-		})
-		if err != nil {
-			logrus.Warn("ErrorResult encode error: ", err.Error())
-		}
-		return
+		logrus.Warn("Form parse error: ", err.Error())
 	}
 
-	if payload.Login != "human" || payload.Password != "iamnotbot" {
+	login := r.FormValue("login")
+	password := r.FormValue("password")
+
+	if login != "human" || password != "iamnotbot" {
 		err := json.NewEncoder(w).Encode(ErrorResult{
 			Error: Description{
 				Code:        http.StatusUnauthorized,

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>FingerprintJS Fastly Integration</title>
+    <title>FingerprintJS Fastly Integration Demo</title>
     <style>
         body {
             width: 100%;
@@ -36,14 +36,10 @@
             flex-direction: column;
         }
 
-        .url_form {
+        .form {
             display: flex;
             flex-direction: column;
             margin: 0 50px;
-        }
-
-        #captcha {
-            margin: 10px 50px;
         }
 
         label {
@@ -52,7 +48,6 @@
             border-radius: 10px;
             margin-bottom: 10px;
             border: 2px solid rgba(13, 16, 43, .5);
-            /*border-right: none;*/
             display: flex;
             align-items: center;
             padding: 0;
@@ -67,7 +62,6 @@
 
         input[type=text], input[type=password] {
             padding: 0 2rem;
-            /*width: 100%;*/
             width: 500px;
             height: 100%;
             box-shadow: none;
@@ -106,8 +100,7 @@
             color: #f0470a;
         }
     </style>
-    <link rel="icon" type="image/ico" href="./img/favicon.ico">
-    <script src="https://www.google.com/recaptcha/api.js?onload=onloadCallback&render=explicit" async defer></script>
+    <link rel="icon" type="image/ico" href="img/favicon.ico">
 </head>
 <body>
 <div class="content">
@@ -119,55 +112,13 @@
                   fill="#f24405"></path>
         </svg>
     </a>
-    <h1>FingerprintJS Fastly Integration</h1>
-    <div id="captcha"></div>
-    <form class="url_form" action="https://we-protect-your-privacy.ngrok.io/redirect/old" method="POST">
-        <label><input id="login" type="text" placeholder="Login"></label>
-        <label><input id="pass" type="password" placeholder="Password"></label>
+    <h1>FingerprintJS Fastly Integration Demo</h1>
+    <form class="form" id="login_form" method="post" action="/login">
+        <label><input name="login" id="login" type="text" placeholder="Login"></label>
+        <label><input name="password" id="password" type="password" placeholder="Password"></label>
         <label class="checkbox"><input type="checkbox" id="bot" name="bot">Emulate bot</label>
-        <label class="checkbox"><input type="submit" id="button"></label>
+        <input type="submit">
     </form>
-<!--    <script>-->
-<!--        function handleErrors(response) {-->
-<!--            if (!response.ok)-->
-<!--                throw Error("Bot Detected!");-->
-<!--            return response;-->
-<!--        }-->
-
-<!--        document.getElementById("button").addEventListener("click", () => {-->
-<!--            if (document.getElementById("bot").checked)-->
-<!--                document.cookie = 'botd-request-id' + '=' + encodeURIComponent("6082d84b401b8c946781f08d")-->
-
-<!--            fetch("https://we-protect-your-privacy.ngrok.io/redirect/old",-->
-<!--                {-->
-<!--                    method: 'POST',-->
-<!--                    headers: {-->
-<!--                        'Content-Type': 'application/json',-->
-<!--                    },-->
-<!--                    body: JSON.stringify({-->
-<!--                        'login': document.getElementById("login").value,-->
-<!--                        'password': document.getElementById("pass").value,-->
-<!--                    })-->
-<!--                })-->
-<!--                .then(handleErrors)-->
-<!--                .then(response => {-->
-<!--                    response.json().then(resultJSON => {-->
-<!--                        if(resultJSON.error)-->
-<!--                            alert("Request successfully reached backend: " + resultJSON.error.description)-->
-<!--                        if(resultJSON.message)-->
-<!--                            alert("Request successfully reached backend: " + resultJSON.message.description)-->
-<!--                    })-->
-
-<!--                })-->
-<!--                .catch(error => {-->
-<!--                    if (error.message === "Bot Detected!") {-->
-<!--                        document.getElementsByClassName('url_form')[0].style.display = "none"-->
-<!--                        grecaptcha.render('captcha', {'sitekey': '6LcfKroaAAAAANIRMfvtsy5K0VP34csA9rb_zY7m'});-->
-<!--                    } else-->
-<!--                        alert('Server error: ' + error.message)-->
-<!--                })-->
-<!--        }, false);-->
-<!--    </script>-->
 </div>
 </body>
 </html>

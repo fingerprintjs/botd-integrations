@@ -6,20 +6,13 @@ import (
 )
 
 func Run() {
-	fs := http.FileServer(http.Dir("./static/main"))
-	captchaFS := http.FileServer(http.Dir("./static/captcha"))
-	redirectFS := http.FileServer(http.Dir("./static/redirect"))
+	fs := http.FileServer(http.Dir("./static"))
 
 	http.Handle("/", middlewareController(fs))
 	http.HandleFunc("/login", loginHandler)
-	http.Handle("/captcha", middlewareController(captchaFS))
-	http.Handle("/redirect", middlewareController(redirectFS))
 
-	http.HandleFunc("/redirect/old", oldHandler)
-	http.HandleFunc("/redirect/new", newHandler)
-
-	logrus.Info("Listening on :5001...")
-	err := http.ListenAndServe(":5001", nil)
+	logrus.Info("Listening on :5000...")
+	err := http.ListenAndServe(":5000", nil)
 
 	if err != nil {
 		logrus.Fatal(err)
@@ -28,7 +21,6 @@ func Run() {
 
 func middlewareController(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		logrus.Info("Hello from Middleware")
 		setCorsAllowAll(w)
 		next.ServeHTTP(w, r)
 	})
