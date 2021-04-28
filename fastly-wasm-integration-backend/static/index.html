@@ -116,9 +116,15 @@
     <form class="form" id="login_form" method="post" action="/login">
         <label><input name="login" id="login" type="text" placeholder="Login"></label>
         <label><input name="password" id="password" type="password" placeholder="Password"></label>
-        <label class="checkbox"><input type="checkbox" id="bot" name="bot">Emulate bot</label>
+        <label class="checkbox"><input type="checkbox" id="bot" name="bot" onchange="fakeBot()">Emulate bot</label>
         <input type="submit">
     </form>
+    <script>
+        function fakeBot() {
+            if (document.getElementById("bot").checked)
+                document.cookie = 'botd-request-id' + '=' + encodeURIComponent("6082d84b401b8c946781f08d")
+        }
+    </script>
 </div>
 </body>
 </html>
