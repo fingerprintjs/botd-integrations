@@ -1,14 +1,14 @@
 //! Default Compute@Edge template program.
 
 use fastly::http::{header, Method, StatusCode, HeaderValue};
-use fastly::{mime, Error, Request, Response, Dictionary};
+use fastly::{mime, Error, Request, Response};
 use regex::Regex;
 
 /// The name of a backend server associated with this service.
 ///
 /// This should be changed to match the name of your own backend. See the the `Hosts` section of
 /// the Fastly WASM service UI for more information.
-const APP_BACKEND: &str = "Ngrok";
+const APP_BACKEND: &str = "AWS";
 
 /// The name of a second backend associated with this service.
 const FPJS_BACKEND: &str = "Fpjs";
@@ -18,6 +18,7 @@ const FPJS_TOKEN: &str = "JzdWIiOiIxMjM0NTY3O";
 const BOT_STATUS_HEADER: &str = "fpjs-bot-status";
 const REQUEST_STATUS_HEADER: &str = "fpjs-request-status";
 const BOT_PROB_HEADER: &str = "fpjs-bot-prob";
+const BOT_TYPE_HEADER: &str = "fpjs-bot-type";
 const REQUEST_ID_HEADER: &str = "fpjs-request-id";
 const IS_BOT_HEADER: &str = "fpjs-is-bot";
 const CHALLENGE_HEADER: &str = "fpjs-challenge-id";
@@ -38,6 +39,9 @@ const SCRIPT_BODY: &str = r#"
         console.log(result)
         }
     </script>"#;
+
+const FAILED_STR: &str = "failed";
+const OK_STR: &str = "ok";
 
 fn add_fpjs_script(html: Box<str>) -> String {
     let mut fpjs_html = String::from(html);
@@ -74,36 +78,40 @@ fn extract_cookie_element(cookie: &str, element_name: &str) -> Option<String> {
     return Option::Some(value);
 }
 
-struct AllowingRequestResult {
-    allow_to_request: bool,
-    request_id: String
+
+struct BotDetectionResult {
+    request_id: String,
+
+    request_status: String,
+
+    botd_status: String,
+    botd_prob: f64,
+    botd_type: String,
 }
 
-fn allow_to_request(req: &Request) -> AllowingRequestResult {
+fn bot_detection(req: &Request) -> BotDetectionResult {
+    let mut result = BotDetectionResult {
+        request_id: "".to_owned(),
+        request_status: "".to_owned(),
+        botd_status: "".to_owned(),
+        botd_prob: -1.0,
+        botd_type: "".to_owned()
+    };
+
     // Get fpjs request id from cookie header
     let cookie_option = get_header_value(req.get_header(COOKIE_HEADER));
     if cookie_option.is_none() {
-        return AllowingRequestResult { allow_to_request: true, request_id: "".parse().unwrap() };
+        result.request_status = FAILED_STR.to_owned();
+        return result;
     }
     let cookie_value = cookie_option.unwrap();
     let cookie_element = extract_cookie_element(&*cookie_value, COOKIE_FPJS_NAME);
     if cookie_element.is_none() {
-        return AllowingRequestResult { allow_to_request: true, request_id: "".parse().unwrap() };
+        result.request_status = FAILED_STR.to_owned();
+        return result;
     }
     let fpjs_request_id = cookie_element.unwrap();
-
-    // Check if it was called after challenge solved
-    let challenge_option = get_header_value(req.get_header(CHALLENGE_HEADER));
-    if challenge_option.is_some() {
-        let challenge_id = challenge_option.unwrap();
-        // TODO: check challenge_id (send to botd backend)
-        let challenge_solved = true;
-        if challenge_solved {
-            return AllowingRequestResult { allow_to_request: true, request_id: fpjs_request_id };
-        } else {
-            return AllowingRequestResult { allow_to_request: false, request_id: fpjs_request_id };
-        }
-    }
+    result.request_id = fpjs_request_id.to_owned();
 
     // Build request for bot detection
     let mut verify_request = Request::get(FPJS_URL);
@@ -116,28 +124,56 @@ fn allow_to_request(req: &Request) -> AllowingRequestResult {
     // Send verify request
     let verify_response = verify_request.send(FPJS_BACKEND).unwrap();
 
-    // Extract bot detection procedure status
+    // Check status code
+    if !verify_response.get_status().is_success() {
+        result.request_status = FAILED_STR.to_owned();
+        return result;
+    }
+
+    // Extract request status
+    let request_status_option = get_header_value(verify_response.get_header(REQUEST_STATUS_HEADER));
+    if request_status_option.is_none() {
+        result.request_status = FAILED_STR.to_owned();
+        return result;
+    }
+    let request_status = request_status_option.unwrap();
+    if !request_status.eq(OK_STR) {
+        result.request_status = request_status;
+        return result;
+    }
+    result.request_status = OK_STR.to_owned();
+
+    // Extract bot detection status
     let bot_status_option = get_header_value(verify_response.get_header(BOT_STATUS_HEADER));
     if bot_status_option.is_none() {
-        return AllowingRequestResult { allow_to_request: true, request_id: fpjs_request_id };
+        result.botd_status = FAILED_STR.to_owned();
+        return result;
     }
     let bot_status = bot_status_option.unwrap();
 
-    // Extract bot probability value and decide if it's a bot
-    let mut is_bot = false;
-    if bot_status.eq("ok") {
+    if bot_status.eq(OK_STR) {
+        // Extract bot probability
         let bot_prob_option = get_header_value(verify_response.get_header(BOT_PROB_HEADER));
         if bot_prob_option.is_none() {
-            return AllowingRequestResult { allow_to_request: true, request_id: fpjs_request_id };
+            result.botd_status = FAILED_STR.to_owned();
+            return result;
         }
-        let bot_prob: f32 = bot_prob_option.unwrap().parse().unwrap();
-        if bot_prob >= 0.5 {
-            is_bot = true;
+        let bot_prob: f64 = bot_prob_option.unwrap().parse().unwrap();
+        result.botd_status = OK_STR.to_owned();
+        result.botd_prob = bot_prob;
+
+        // Extract bot type
+        let bot_type_option = get_header_value(verify_response.get_header(BOT_TYPE_HEADER));
+        if bot_type_option.is_none() {
+            return result;
         }
+        let bot_type = bot_type_option.unwrap().parse().unwrap();
+        result.botd_type = bot_type;
+        return result;
     }
 
-    // Send an error if it's a bot, otherwise go to app backend and return the response
-    return AllowingRequestResult { allow_to_request: !is_bot, request_id: fpjs_request_id };
+    result.botd_status = bot_status;
+    return result;
 }
 
 /// The entry point for your application.
@@ -150,7 +186,7 @@ fn allow_to_request(req: &Request) -> AllowingRequestResult {
 #[fastly::main]
 fn main(mut req: Request) -> Result<Response, Error> {
     // Make any desired changes to the client request.
-    req.set_header(header::HOST, "we-protect-your-privacy.ngrok.io"); // TODO: fix it
+    req.set_header(header::HOST, "botd-integration-demo.fpjs.sh");
 
     // Filter request methods...
     match req.get_method() {
@@ -191,27 +227,34 @@ fn main(mut req: Request) -> Result<Response, Error> {
             Ok(req.send(APP_BACKEND)?)
         }
 
-        "/captcha" => {
-            req.set_pass(true); // TODO: get rid of it
-            //return Ok(req.send(APP_BACKEND)?)
-            return Ok(Response::from_status(StatusCode::OK)
-                .with_content_type(mime::TEXT_HTML_UTF_8)
-                .with_body("hello"))
-        }
-
         "/login" => {
-            let result = allow_to_request(&req);
-            if result.allow_to_request {
-                Ok(req.send(APP_BACKEND)?
-                    .with_header(IS_BOT_HEADER, "0")
-                    .with_header(REQUEST_ID_HEADER, result.request_id.as_str()))
+            req.set_pass(true); // TODO: get rid of it
+            let result = bot_detection(&req);
+            let botd_calculated = result.request_status.eq(OK_STR)
+                && result.botd_status.eq(OK_STR);
+            let is_bot = botd_calculated && result.botd_prob >= 0.5;
+
+            return if is_bot {
+                Ok(Response::from_status(StatusCode::FORBIDDEN)
+                    .with_header(REQUEST_ID_HEADER, result.request_id)
+                    .with_header(BOT_STATUS_HEADER, result.botd_status)
+                    .with_header(BOT_PROB_HEADER, format!("{:.2}", result.botd_prob))
+                    .with_header(BOT_TYPE_HEADER, result.botd_type)
+                )
             } else {
-                Ok(Response::from_status(303)
-                    .with_content_type(mime::TEXT_HTML_UTF_8)
-                    .with_header("version", "4") // TODO: get rid of it (testing purpose)
-                    .with_header("Location","/captcha")
-                    .with_header(IS_BOT_HEADER, "1")
-                    .with_header(REQUEST_ID_HEADER, result.request_id.as_str()))
+                let mut response = req.send(APP_BACKEND)?
+                    .with_header(REQUEST_ID_HEADER, result.request_id);
+                let status: String;
+                if !result.request_status.eq(OK_STR) {
+                    status = result.request_status;
+                } else {
+                    status = result.botd_status;
+                }
+                response = response.with_header(BOT_STATUS_HEADER, status.to_owned());
+                if botd_calculated {
+                    response = response.with_header(BOT_PROB_HEADER, format!("{:.2}", result.botd_prob));
+                }
+                Ok(response)
             }
         }
 
