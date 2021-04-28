@@ -120,9 +120,29 @@
         <input type="submit">
     </form>
     <script>
+        function getCookie(name) {
+            const matches = document.cookie.match(
+                new RegExp('(?:^|; )' + name.replace(/([.$?*|{}()[\]\\/+^])/g, '\\$1') + '=([^;]*)'),
+            )
+            return matches ? decodeURIComponent(matches[1]) : undefined
+        }
+
         function fakeBot() {
-            if (document.getElementById("bot").checked)
-                document.cookie = 'botd-request-id' + '=' + encodeURIComponent("6082d84b401b8c946781f08d")
+            const fakeID = "6082d84b401b8c946781f08d"
+            if (document.getElementById('bot').checked) {
+                let actualID = getCookie('botd-request-id')
+                if (actualID !== fakeID) {
+                    document.cookie = 'actual-botd-request-id=' + actualID
+                    document.cookie = 'botd-request-id=' + fakeID
+                }
+            } else {
+                let currentID = getCookie('botd-request-id')
+                if (currentID === fakeID) {
+                    let actualID = getCookie('actual-botd-request-id')
+                    if(actualID !== undefined && actualID !== "" && actualID !== fakeID)
+                        document.cookie = 'botd-request-id=' + actualID
+                }
+            }
         }
     </script>
 </div>
