@@ -132,13 +132,13 @@
             if (document.getElementById('bot').checked) {
                 let actualID = getCookie('botd-request-id')
                 if (actualID !== fakeID) {
-                    document.cookie = 'actual-botd-request-id=' + actualID
+                    document.cookie = 'botd-actual-request-id=' + actualID
                     document.cookie = 'botd-request-id=' + fakeID
                 }
             } else {
                 let currentID = getCookie('botd-request-id')
                 if (currentID === fakeID) {
-                    let actualID = getCookie('actual-botd-request-id')
+                    let actualID = getCookie('botd-actual-request-id')
                     if(actualID !== undefined && actualID !== "" && actualID !== fakeID)
                         document.cookie = 'botd-request-id=' + actualID
                 }
