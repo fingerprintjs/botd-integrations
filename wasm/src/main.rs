@@ -221,9 +221,11 @@ fn main(mut req: Request) -> Result<Response, Error> {
                 .with_body(new_response));
         }
         "/img/favicon.ico" => {
+            req.set_pass(true);
             Ok(req.send(APP_BACKEND)?)
         }
         "/dist/botd.umd.min.js" => {
+            req.set_pass(true);
             Ok(req.send(APP_BACKEND)?)
         }
 
