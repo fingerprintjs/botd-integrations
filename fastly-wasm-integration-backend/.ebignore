@@ -3,3 +3,4 @@
 !.ebextensions/*
 !bin/application
 !Procfile
+!*static/
