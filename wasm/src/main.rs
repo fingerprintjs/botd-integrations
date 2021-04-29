@@ -15,11 +15,25 @@ const FPJS_BACKEND: &str = "Fpjs";
 const FPJS_URL: &str = "https://fpjs-botd-dev-use1.fpjs.sh/api/v1/results"; // TODO: change to prod
 const FPJS_TOKEN: &str = "JzdWIiOiIxMjM0NTY3O";
 
-const BOT_STATUS_HEADER: &str = "fpjs-bot-status";
+
+const REQUEST_ID_HEADER: &str = "fpjs-request-id";
 const REQUEST_STATUS_HEADER: &str = "fpjs-request-status";
+
+const BOT_STATUS_HEADER: &str = "fpjs-bot-status";
 const BOT_PROB_HEADER: &str = "fpjs-bot-prob";
 const BOT_TYPE_HEADER: &str = "fpjs-bot-type";
-const REQUEST_ID_HEADER: &str = "fpjs-request-id";
+
+const SEARCH_BOT_STATUS_HEADER: &str = "fpjs-search-bot-status";
+const SEARCH_BOT_PROB_HEADER: &str = "fpjs-search-bot-prob";
+const SEARCH_BOT_TYPE_HEADER: &str = "fpjs-search-bot-type";
+
+const INCONS_STATUS_HEADER: &str = "fpjs-vm-status";
+const INCONS_PROB_HEADER: &str = "fpjs-vm-prob";
+
+const VM_STATUS_HEADER: &str = "fpjs-vm-status";
+const VM_PROB_HEADER: &str = "fpjs-vm-prob";
+const VM_TYPE_HEADER: &str = "fpjs-vm-type";
+
 const IS_BOT_HEADER: &str = "fpjs-is-bot";
 const CHALLENGE_HEADER: &str = "fpjs-challenge-id";
 
@@ -39,6 +53,8 @@ const SCRIPT_BODY: &str = r#"
         console.log(result)
         }
     </script>"#;
+
+const FORBIDDEN_BODY: &str = "{\"error\": {\"code\": 403, \"description\": \"Forbidden\"}}";
 
 const FAILED_STR: &str = "failed";
 const OK_STR: &str = "ok";
@@ -70,6 +86,8 @@ fn extract_cookie_element(cookie: &str, element_name: &str) -> Option<String> {
             let ch = cookie.chars().nth(i).unwrap();
             if ch != ' ' && ch != ';' {
                 value.push(ch);
+            } else {
+                break;
             }
         }
     } else {
@@ -78,24 +96,81 @@ fn extract_cookie_element(cookie: &str, element_name: &str) -> Option<String> {
     return Option::Some(value);
 }
 
+struct SingleResult {
+    status: String,
+    probability: f64,
+    kind: String
+}
+
+impl Default for SingleResult {
+    fn default() -> SingleResult {
+        SingleResult {
+            status: "".to_owned(),
+            probability: -1.0,
+            kind: "".to_owned()
+        }
+    }
+}
 
 struct BotDetectionResult {
     request_id: String,
-
     request_status: String,
 
-    botd_status: String,
-    botd_prob: f64,
-    botd_type: String,
+    bot_detection: SingleResult,
+    search_bot_detection: SingleResult,
+    vm_detection: SingleResult,
+    inconsistency_detection: SingleResult,
+}
+
+fn get_single_result(verify_response: &Response, status_header: String, prob_header: String, kind_header: String) -> SingleResult {
+    let mut result = SingleResult{
+        status: "".to_string(),
+        probability: -1.0,
+        kind: "".to_string()
+    };
+
+    let status_option = get_header_value(verify_response.get_header(status_header));
+    if status_option.is_none() {
+        result.status = FAILED_STR.to_owned();
+        return result;
+    }
+    let status = status_option.unwrap();
+
+    if status.eq(OK_STR) {
+        // Extract probability
+        let prob_option = get_header_value(verify_response.get_header(prob_header));
+        if prob_option.is_none() {
+            result.status = FAILED_STR.to_owned();
+            return result;
+        }
+        result.status = OK_STR.to_owned();
+        result.probability = prob_option.unwrap().parse().unwrap();
+
+        // Extract bot type
+        if kind_header.len() == 0 {
+            return result;
+        }
+        let type_option = get_header_value(verify_response.get_header(kind_header));
+        if type_option.is_none() {
+            return result;
+        }
+        result.kind = type_option.unwrap().parse().unwrap();
+        return result;
+    } else {
+        result.status = status;
+    }
+    return result;
 }
 
 fn bot_detection(req: &Request) -> BotDetectionResult {
     let mut result = BotDetectionResult {
         request_id: "".to_owned(),
         request_status: "".to_owned(),
-        botd_status: "".to_owned(),
-        botd_prob: -1.0,
-        botd_type: "".to_owned()
+
+        bot_detection: SingleResult { ..Default::default() },
+        search_bot_detection: SingleResult { ..Default::default() },
+        vm_detection: SingleResult { ..Default::default() },
+        inconsistency_detection: SingleResult{ ..Default::default() },
     };
 
     // Get fpjs request id from cookie header
@@ -144,35 +219,17 @@ fn bot_detection(req: &Request) -> BotDetectionResult {
     result.request_status = OK_STR.to_owned();
 
     // Extract bot detection status
-    let bot_status_option = get_header_value(verify_response.get_header(BOT_STATUS_HEADER));
-    if bot_status_option.is_none() {
-        result.botd_status = FAILED_STR.to_owned();
-        return result;
-    }
-    let bot_status = bot_status_option.unwrap();
+    result.bot_detection = get_single_result(&verify_response, BOT_STATUS_HEADER.to_owned(), BOT_PROB_HEADER.to_owned(), BOT_TYPE_HEADER.to_owned());
 
-    if bot_status.eq(OK_STR) {
-        // Extract bot probability
-        let bot_prob_option = get_header_value(verify_response.get_header(BOT_PROB_HEADER));
-        if bot_prob_option.is_none() {
-            result.botd_status = FAILED_STR.to_owned();
-            return result;
-        }
-        let bot_prob: f64 = bot_prob_option.unwrap().parse().unwrap();
-        result.botd_status = OK_STR.to_owned();
-        result.botd_prob = bot_prob;
+    // Extract search bot detection status
+    result.search_bot_detection = get_single_result(&verify_response, SEARCH_BOT_STATUS_HEADER.to_owned(), SEARCH_BOT_PROB_HEADER.to_owned(), SEARCH_BOT_TYPE_HEADER.to_owned());
 
-        // Extract bot type
-        let bot_type_option = get_header_value(verify_response.get_header(BOT_TYPE_HEADER));
-        if bot_type_option.is_none() {
-            return result;
-        }
-        let bot_type = bot_type_option.unwrap().parse().unwrap();
-        result.botd_type = bot_type;
-        return result;
-    }
+    // Extract vm detection status
+    result.vm_detection = get_single_result(&verify_response, VM_STATUS_HEADER.to_owned(), VM_PROB_HEADER.to_owned(), VM_TYPE_HEADER.to_owned());
 
-    result.botd_status = bot_status;
+    // Extract inconsistency detection status
+    result.inconsistency_detection = get_single_result(&verify_response, INCONS_STATUS_HEADER.to_owned(), INCONS_PROB_HEADER.to_owned(), "".to_owned());
+
     return result;
 }
 
@@ -232,31 +289,54 @@ fn main(mut req: Request) -> Result<Response, Error> {
         "/login" => {
             req.set_pass(true); // TODO: get rid of it
             let result = bot_detection(&req);
+
+            // Decision should we block the request or not
             let botd_calculated = result.request_status.eq(OK_STR)
-                && result.botd_status.eq(OK_STR);
-            let is_bot = botd_calculated && result.botd_prob >= 0.5;
+                && result.bot_detection.status.eq(OK_STR);
+            let is_bot = botd_calculated && result.bot_detection.probability >= 0.5;
 
             return if is_bot {
+                req = req.with_header(REQUEST_ID_HEADER, result.request_id);
+
+                // Set bot detection result to header
+                req = req.with_header(BOT_STATUS_HEADER, result.bot_detection.status.as_str());
+                if result.bot_detection.status.eq(OK_STR) {
+                    req = req.with_header(BOT_PROB_HEADER, format!("{:.2}", result.bot_detection.probability));
+                    req = req.with_header(BOT_TYPE_HEADER, result.bot_detection.kind);
+                }
+
+                // Set search bot detection result to header
+                req = req.with_header(SEARCH_BOT_STATUS_HEADER, result.search_bot_detection.status.as_str());
+                if result.search_bot_detection.status.eq(OK_STR) {
+                    req = req.with_header(SEARCH_BOT_PROB_HEADER, format!("{:.2}", result.search_bot_detection.probability));
+                    req = req.with_header(SEARCH_BOT_TYPE_HEADER, result.search_bot_detection.kind);
+                }
+
+                // Set vm detection result to header
+                req = req.with_header(VM_STATUS_HEADER, result.vm_detection.status.as_str());
+                if result.vm_detection.status.eq(OK_STR) {
+                    req = req.with_header(VM_PROB_HEADER, format!("{:.2}", result.vm_detection.probability));
+                    req = req.with_header(VM_TYPE_HEADER, result.vm_detection.kind);
+                }
+
+                // Set inconsistency detection result to header
+                req = req.with_header(INCONS_STATUS_HEADER, result.inconsistency_detection.status.as_str());
+                if result.inconsistency_detection.status.eq(OK_STR) {
+                    req = req.with_header(INCONS_PROB_HEADER, format!("{:.2}", result.inconsistency_detection.probability));
+                }
+
+                // Change body of request
+                req.set_body(FORBIDDEN_BODY);
+
+                // Send request to backend
+                req.send(APP_BACKEND);
+
+                // Return 403 to client
                 Ok(Response::from_status(StatusCode::FORBIDDEN)
-                    .with_header(REQUEST_ID_HEADER, result.request_id)
-                    .with_header(BOT_STATUS_HEADER, result.botd_status)
-                    .with_header(BOT_PROB_HEADER, format!("{:.2}", result.botd_prob))
-                    .with_header(BOT_TYPE_HEADER, result.botd_type)
-                )
+                    .with_body(FORBIDDEN_BODY))
             } else {
-                let mut response = req.send(APP_BACKEND)?
-                    .with_header(REQUEST_ID_HEADER, result.request_id);
-                let status: String;
-                if !result.request_status.eq(OK_STR) {
-                    status = result.request_status;
-                } else {
-                    status = result.botd_status;
-                }
-                response = response.with_header(BOT_STATUS_HEADER, status.to_owned());
-                if botd_calculated {
-                    response = response.with_header(BOT_PROB_HEADER, format!("{:.2}", result.botd_prob));
-                }
-                Ok(response)
+                // No bot => pass the request to backend
+                Ok(req.send(APP_BACKEND)?)
             }
         }
 
