@@ -8,8 +8,8 @@ import (
 func Run() {
 	fs := http.FileServer(http.Dir("./static"))
 
-	http.Handle("/", middlewareController(fs))
-	http.HandleFunc("/login", loginHandler)
+	http.Handle("/", middlewareController(fs.ServeHTTP))
+	http.Handle("/login", middlewareController(loginHandler))
 
 	logrus.Info("Listening on :5000...")
 	err := http.ListenAndServe(":5000", nil)
@@ -19,10 +19,10 @@ func Run() {
 	}
 }
 
-func middlewareController(next http.Handler) http.Handler {
+func middlewareController(handler func(w http.ResponseWriter, r *http.Request)) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		setCorsAllowAll(w)
-		next.ServeHTTP(w, r)
+		handler(w, r)
 	})
 }
 

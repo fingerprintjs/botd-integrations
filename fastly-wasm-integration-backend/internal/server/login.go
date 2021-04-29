@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/sirupsen/logrus"
 	"net/http"
+	"strconv"
 )
 
 type Description struct {
@@ -20,11 +21,16 @@ type MessageResult struct {
 }
 
 func loginHandler(w http.ResponseWriter, r *http.Request) {
-	setCorsAllowAll(w)
-
 	err := r.ParseForm()
 	if err != nil {
 		logrus.Warn("Form parse error: ", err.Error())
+	}
+
+	botProbabilityStr := r.Header.Get("Fpjs-Bot-Prob")
+	botProbabilityFloat, err := strconv.ParseFloat(botProbabilityStr, 64)
+
+	if err == nil && botProbabilityFloat > 0 {
+		logrus.Warn("Query from bot with probability: ", botProbabilityFloat)
 	}
 
 	login := r.FormValue("login")
