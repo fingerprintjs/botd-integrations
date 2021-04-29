@@ -8,12 +8,12 @@ use regex::Regex;
 ///
 /// This should be changed to match the name of your own backend. See the the `Hosts` section of
 /// the Fastly WASM service UI for more information.
-const APP_BACKEND: &str = "AWS";
+const APP_BACKEND: &str = "Backend";
 const APP_HOST: &str = "botd-integration-demo.fpjs.sh";
 
 /// The name of a second backend associated with this service.
-const FPJS_BACKEND: &str = "Fpjs";
-const FPJS_URL: &str = "https://fpjs-botd-dev-use1.fpjs.sh/api/v1/results"; // TODO: change to prod
+const FPJS_BACKEND: &str = "Botd";
+const FPJS_URL: &str = "https://botd.fpapi.io/api/v1/results";
 const FPJS_TOKEN: &str = "JzdWIiOiIxMjM0NTY3O";
 
 const REQUEST_ID_HEADER: &str = "fpjs-request-id";
@@ -39,20 +39,18 @@ const CHALLENGE_HEADER: &str = "fpjs-challenge-id";
 
 const COOKIE_FPJS_NAME: &str = "botd-request-id=";
 const COOKIE_HEADER: &str = "cookie";
-const SCRIPT_CONNECT: &str = r#"<script async src="./dist/botd.umd.min.js" onload="getResults()"></script>"#; // TODO: change to cdn
+const SCRIPT_CONNECT: &str = r#"<script async src="https://unpkg.com/@fpjs-incubator/botd@0/dist/botd.umd.min.js" onload="getResults()"></script>"#;
 const SCRIPT_BODY: &str = r#"
     <script>
         async function getResults() {
             const botdPromise = FPJSBotDetect.load({
             token: "JzdWIiOiIxMjM0NTY3O",
-            endpoint: "https://fpjs-botd-dev-use1.fpjs.sh/api/v1",
             async: true,
         })
         const botd = await botdPromise
         const result = await botd.get({isPlayground: true})
-        console.log(result)
         }
-    </script>"#; // TODO: change to prod
+    </script>"#;
 
 const FORBIDDEN_BODY: &str = "{\"error\": {\"code\": 403, \"description\": \"Forbidden\"}}";
 
@@ -243,7 +241,6 @@ fn bot_detection(req: &Request) -> BotDetectionResult {
 #[fastly::main]
 fn main(mut req: Request) -> Result<Response, Error> {
     // Make any desired changes to the client request.
-    // req.set_header(header::HOST, "botd-integration-demo.fpjs.sh");
     req.set_header(header::HOST, APP_HOST);
 
     // Filter request methods...
@@ -282,11 +279,6 @@ fn main(mut req: Request) -> Result<Response, Error> {
             req.set_pass(true);
             Ok(req.send(APP_BACKEND)?)
         }
-        "/dist/botd.umd.min.js" => { // TODO: remove after deploy to cdn
-            req.set_pass(true);
-            Ok(req.send(APP_BACKEND)?)
-        }
-
         "/login" => {
             req.set_pass(true); // TODO: get rid of it
             let result = bot_detection(&req);
