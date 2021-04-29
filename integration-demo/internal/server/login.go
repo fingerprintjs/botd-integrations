@@ -37,6 +37,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	password := r.FormValue("password")
 
 	if login != "human" || password != "iamnotbot" {
+		w.WriteHeader(http.StatusUnauthorized)
 		err := json.NewEncoder(w).Encode(ErrorResult{
 			Error: Description{
 				Code:        http.StatusUnauthorized,
