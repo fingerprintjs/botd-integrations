@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fastly-wasm-integration-backend/internal/server"
+	"integration-demo/internal/server"
 )
 
 func main() {

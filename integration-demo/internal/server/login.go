@@ -40,7 +40,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		err := json.NewEncoder(w).Encode(ErrorResult{
 			Error: Description{
 				Code:        http.StatusUnauthorized,
-				Description: "Wrong login or password",
+				Description: "Incorrect login or password",
 			},
 		})
 		if err != nil {

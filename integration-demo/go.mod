@@ -1,4 +1,4 @@
-module fastly-wasm-integration-backend
+module integration-demo
 
 go 1.16
 
