@@ -27,8 +27,8 @@ const SEARCH_BOT_STATUS_HEADER: &str = "fpjs-search-bot-status";
 const SEARCH_BOT_PROB_HEADER: &str = "fpjs-search-bot-prob";
 const SEARCH_BOT_TYPE_HEADER: &str = "fpjs-search-bot-type";
 
-const INCONS_STATUS_HEADER: &str = "fpjs-vm-status";
-const INCONS_PROB_HEADER: &str = "fpjs-vm-prob";
+const INCONS_STATUS_HEADER: &str = "fpjs-incons-status";
+const INCONS_PROB_HEADER: &str = "fpjs-incons-prob";
 
 const VM_STATUS_HEADER: &str = "fpjs-vm-status";
 const VM_PROB_HEADER: &str = "fpjs-vm-prob";
