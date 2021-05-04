@@ -35,13 +35,13 @@ const VM_TYPE_HEADER: &str = "fpjs-vm-type";
 
 const COOKIE_NAME: &str = "botd-request-id=";
 const COOKIE_HEADER: &str = "cookie";
+
 const SCRIPT_CONNECT: &str = r#"<script async src="https://unpkg.com/@fpjs-incubator/botd-agent@0/dist/botd.umd.min.js" onload="getResults()"></script>"#;
 const SCRIPT_BODY_BEGIN: &str = r#"
     <script>
         async function getResults() {
             const botdPromise = FPJSBotDetect.load({
             token: ""#;
-
 const SCRIPT_BODY_END: &str = r#"
                     ",
             async: true,
@@ -337,8 +337,7 @@ fn main(mut req: Request) -> Result<Response, Error> {
                 req.send(APP_BACKEND);
 
                 // Return 403 to client
-                Ok(Response::from_status(StatusCode::FORBIDDEN)
-                    .with_body(FORBIDDEN_BODY))
+                Ok(Response::from_status(StatusCode::FORBIDDEN).with_body(FORBIDDEN_BODY))
             } else {
                 // No bot => pass the request to backend
                 Ok(req.send(APP_BACKEND)?)
