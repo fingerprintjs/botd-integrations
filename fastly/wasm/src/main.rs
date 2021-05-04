@@ -225,7 +225,7 @@ fn bot_detection(req: &Request) -> BotDetectionResult {
     // Extract vm detection status
     result.vm = get_single_result(&verify_response, VM_STATUS_HEADER.to_owned(), VM_PROB_HEADER.to_owned(), VM_TYPE_HEADER.to_owned());
 
-    // Extract inconsistency detection status
+    // Extract browser spoofing detection status
     result.browser_spoofing = get_single_result(&verify_response, BROWSER_SPOOFING_STATUS_HEADER.to_owned(), BROWSER_SPOOFING_PROB_HEADER.to_owned(), "".to_owned());
 
     return result;
@@ -312,7 +312,7 @@ fn main(mut req: Request) -> Result<Response, Error> {
                     req = req.with_header(VM_TYPE_HEADER, result.vm.kind);
                 }
 
-                // Set inconsistency detection result to header
+                // Set browser spoofing detection result to header
                 req = req.with_header(BROWSER_SPOOFING_STATUS_HEADER, result.browser_spoofing.status.as_str());
                 if result.browser_spoofing.status.eq(OK_STR) {
                     req = req.with_header(BROWSER_SPOOFING_PROB_HEADER, format!("{:.2}", result.browser_spoofing.probability));
