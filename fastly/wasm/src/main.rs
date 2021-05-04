@@ -42,8 +42,7 @@ const SCRIPT_BODY_BEGIN: &str = r#"
         async function getResults() {
             const botdPromise = FPJSBotDetect.load({
             token: ""#;
-const SCRIPT_BODY_END: &str = r#"
-                    ",
+const SCRIPT_BODY_END: &str = r#"",
             async: true,
         })
         const botd = await botdPromise
