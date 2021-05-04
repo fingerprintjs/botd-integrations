@@ -290,6 +290,7 @@ fn main(mut req: Request) -> Result<Response, Error> {
 
             return if is_bot {
                 req = req.with_header(REQUEST_ID_HEADER, result.request_id);
+                req = req.with_header(REQUEST_STATUS_HEADER, result.request_status);
 
                 // Set bot detection result to header
                 req = req.with_header(BOT_STATUS_HEADER, result.bot.status.as_str());
