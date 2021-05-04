@@ -27,8 +27,8 @@ const SEARCH_BOT_STATUS_HEADER: &str = "fpjs-search-bot-status";
 const SEARCH_BOT_PROB_HEADER: &str = "fpjs-search-bot-prob";
 const SEARCH_BOT_TYPE_HEADER: &str = "fpjs-search-bot-type";
 
-const INCONS_STATUS_HEADER: &str = "fpjs-incons-status";
-const INCONS_PROB_HEADER: &str = "fpjs-incons-prob";
+const BROWSER_SPOOFING_STATUS_HEADER: &str = "fpjs-browser-spoofing-status";
+const BROWSER_SPOOFING_PROB_HEADER: &str = "fpjs-browser-spoofing-prob";
 
 const VM_STATUS_HEADER: &str = "fpjs-vm-status";
 const VM_PROB_HEADER: &str = "fpjs-vm-prob";
@@ -114,10 +114,10 @@ struct BotDetectionResult {
     request_id: String,
     request_status: String,
 
-    bot_detection: SingleResult,
-    search_bot_detection: SingleResult,
-    vm_detection: SingleResult,
-    inconsistency_detection: SingleResult,
+    bot: SingleResult,
+    search_bot: SingleResult,
+    vm: SingleResult,
+    browser_spoofing: SingleResult,
 }
 
 fn get_single_result(verify_response: &Response, status_header: String, prob_header: String, kind_header: String) -> SingleResult {
@@ -165,10 +165,10 @@ fn bot_detection(req: &Request) -> BotDetectionResult {
         request_id: "".to_owned(),
         request_status: "".to_owned(),
 
-        bot_detection: SingleResult { ..Default::default() },
-        search_bot_detection: SingleResult { ..Default::default() },
-        vm_detection: SingleResult { ..Default::default() },
-        inconsistency_detection: SingleResult{ ..Default::default() },
+        bot: SingleResult { ..Default::default() },
+        search_bot: SingleResult { ..Default::default() },
+        vm: SingleResult { ..Default::default() },
+        browser_spoofing: SingleResult{ ..Default::default() },
     };
 
     // Get fpjs request id from cookie header
@@ -217,16 +217,16 @@ fn bot_detection(req: &Request) -> BotDetectionResult {
     result.request_status = OK_STR.to_owned();
 
     // Extract bot detection status
-    result.bot_detection = get_single_result(&verify_response, BOT_STATUS_HEADER.to_owned(), BOT_PROB_HEADER.to_owned(), BOT_TYPE_HEADER.to_owned());
+    result.bot = get_single_result(&verify_response, BOT_STATUS_HEADER.to_owned(), BOT_PROB_HEADER.to_owned(), BOT_TYPE_HEADER.to_owned());
 
     // Extract search bot detection status
-    result.search_bot_detection = get_single_result(&verify_response, SEARCH_BOT_STATUS_HEADER.to_owned(), SEARCH_BOT_PROB_HEADER.to_owned(), SEARCH_BOT_TYPE_HEADER.to_owned());
+    result.search_bot = get_single_result(&verify_response, SEARCH_BOT_STATUS_HEADER.to_owned(), SEARCH_BOT_PROB_HEADER.to_owned(), SEARCH_BOT_TYPE_HEADER.to_owned());
 
     // Extract vm detection status
-    result.vm_detection = get_single_result(&verify_response, VM_STATUS_HEADER.to_owned(), VM_PROB_HEADER.to_owned(), VM_TYPE_HEADER.to_owned());
+    result.vm = get_single_result(&verify_response, VM_STATUS_HEADER.to_owned(), VM_PROB_HEADER.to_owned(), VM_TYPE_HEADER.to_owned());
 
     // Extract inconsistency detection status
-    result.inconsistency_detection = get_single_result(&verify_response, INCONS_STATUS_HEADER.to_owned(), INCONS_PROB_HEADER.to_owned(), "".to_owned());
+    result.browser_spoofing = get_single_result(&verify_response, BROWSER_SPOOFING_STATUS_HEADER.to_owned(), BROWSER_SPOOFING_PROB_HEADER.to_owned(), "".to_owned());
 
     return result;
 }
@@ -285,37 +285,37 @@ fn main(mut req: Request) -> Result<Response, Error> {
 
             // Decision should we block the request or not
             let botd_calculated = result.request_status.eq(OK_STR)
-                && result.bot_detection.status.eq(OK_STR);
-            let is_bot = botd_calculated && result.bot_detection.probability >= 0.5;
+                && result.bot.status.eq(OK_STR);
+            let is_bot = botd_calculated && result.bot.probability >= 0.5;
 
             return if is_bot {
                 req = req.with_header(REQUEST_ID_HEADER, result.request_id);
 
                 // Set bot detection result to header
-                req = req.with_header(BOT_STATUS_HEADER, result.bot_detection.status.as_str());
-                if result.bot_detection.status.eq(OK_STR) {
-                    req = req.with_header(BOT_PROB_HEADER, format!("{:.2}", result.bot_detection.probability));
-                    req = req.with_header(BOT_TYPE_HEADER, result.bot_detection.kind);
+                req = req.with_header(BOT_STATUS_HEADER, result.bot.status.as_str());
+                if result.bot.status.eq(OK_STR) {
+                    req = req.with_header(BOT_PROB_HEADER, format!("{:.2}", result.bot.probability));
+                    req = req.with_header(BOT_TYPE_HEADER, result.bot.kind);
                 }
 
                 // Set search bot detection result to header
-                req = req.with_header(SEARCH_BOT_STATUS_HEADER, result.search_bot_detection.status.as_str());
-                if result.search_bot_detection.status.eq(OK_STR) {
-                    req = req.with_header(SEARCH_BOT_PROB_HEADER, format!("{:.2}", result.search_bot_detection.probability));
-                    req = req.with_header(SEARCH_BOT_TYPE_HEADER, result.search_bot_detection.kind);
+                req = req.with_header(SEARCH_BOT_STATUS_HEADER, result.search_bot.status.as_str());
+                if result.search_bot.status.eq(OK_STR) {
+                    req = req.with_header(SEARCH_BOT_PROB_HEADER, format!("{:.2}", result.search_bot.probability));
+                    req = req.with_header(SEARCH_BOT_TYPE_HEADER, result.search_bot.kind);
                 }
 
                 // Set vm detection result to header
-                req = req.with_header(VM_STATUS_HEADER, result.vm_detection.status.as_str());
-                if result.vm_detection.status.eq(OK_STR) {
-                    req = req.with_header(VM_PROB_HEADER, format!("{:.2}", result.vm_detection.probability));
-                    req = req.with_header(VM_TYPE_HEADER, result.vm_detection.kind);
+                req = req.with_header(VM_STATUS_HEADER, result.vm.status.as_str());
+                if result.vm.status.eq(OK_STR) {
+                    req = req.with_header(VM_PROB_HEADER, format!("{:.2}", result.vm.probability));
+                    req = req.with_header(VM_TYPE_HEADER, result.vm.kind);
                 }
 
                 // Set inconsistency detection result to header
-                req = req.with_header(INCONS_STATUS_HEADER, result.inconsistency_detection.status.as_str());
-                if result.inconsistency_detection.status.eq(OK_STR) {
-                    req = req.with_header(INCONS_PROB_HEADER, format!("{:.2}", result.inconsistency_detection.probability));
+                req = req.with_header(BROWSER_SPOOFING_STATUS_HEADER, result.browser_spoofing.status.as_str());
+                if result.browser_spoofing.status.eq(OK_STR) {
+                    req = req.with_header(BROWSER_SPOOFING_PROB_HEADER, format!("{:.2}", result.browser_spoofing.probability));
                 }
 
                 // Change body of request
