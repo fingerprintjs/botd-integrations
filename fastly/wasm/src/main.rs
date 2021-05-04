@@ -9,7 +9,7 @@ use regex::Regex;
 /// This should be changed to match the name of your own backend. See the the `Hosts` section of
 /// the Fastly WASM service UI for more information.
 const APP_BACKEND: &str = "Backend";
-const APP_HOST: &str = "botd-integration-demo.fpjs.sh";
+const APP_HOST: &str = "botd-example-app.fpjs.sh";
 
 /// The name of a second backend associated with this service.
 const FPJS_BACKEND: &str = "Botd";
@@ -39,7 +39,7 @@ const CHALLENGE_HEADER: &str = "fpjs-challenge-id";
 
 const COOKIE_FPJS_NAME: &str = "botd-request-id=";
 const COOKIE_HEADER: &str = "cookie";
-const SCRIPT_CONNECT: &str = r#"<script async src="https://unpkg.com/@fpjs-incubator/botd@0/dist/botd.umd.min.js" onload="getResults()"></script>"#;
+const SCRIPT_CONNECT: &str = r#"<script async src="https://unpkg.com/@fpjs-incubator/botd-agent@0/dist/botd.umd.min.js" onload="getResults()"></script>"#;
 const SCRIPT_BODY: &str = r#"
     <script>
         async function getResults() {
