@@ -45,18 +45,22 @@ Possible values = [“google”, “yandex” … or empty string]
 Possible values = [“vmware”, “parallels” … or empty string]
 ### Headers example:
 ```
-fpjs-browser-spoofing-prob: 0.00
-fpjs-browser-spoofing-status: ok
-fpjs-bot-prob: 0.00
-fpjs-search-bot-prob: 0.00
-fpjs-search-bot-status: ok
-fpjs-search-bot-type:
-fpjs-bot-status: ok
-fpjs-bot-type:
 fpjs-request-id: 6080277c12b178b86f1f967d
 fpjs-request-status: ok
-fpjs-vm-prob: 0.00
+
+fpjs-bot-status: ok
+fpjs-bot-prob: 0.00
+fpjs-bot-type:
+
+fpjs-browser-spoofing-status: ok
+fpjs-browser-spoofing-prob: 0.00
+
+fpjs-search-bot-status: ok
+fpjs-search-bot-prob: 0.00
+fpjs-search-bot-type:
+
 fpjs-vm-status: ok
+fpjs-vm-prob: 0.00
 fpjs-vm-type:
 ```
 ### Headers example, when an error occurred:
