@@ -1,7 +1,7 @@
 package main
 
 import (
-	"integration-demo/internal/server"
+	"example-app/internal/server"
 )
 
 func main() {

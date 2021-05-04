@@ -8,7 +8,7 @@ LDFLAGS       :="-s -w -X 'main.VERSION=$(VERSION)'"
 
 XRAY_DISABLED := 'true'
 
-.PHONY: build lint deps build.linux clean docker.image test fmt vet generate deploy*
+.PHONY: build lint build.linux clean test fmt vet generate*
 
 build:
 	go build -o bin/application -ldflags=$(LDFLAGS) ./cmd/app
@@ -36,11 +36,5 @@ build.linux:
 clean:
 	rm -f bin/application
 
-docker.image:
-	docker build -t fpjs/api -f Dockerfile .
-
 generate:
 	go generate ./...
-
-deploy.staging: build.linux
-	eb deploy fpjs-api-staging2 -r us-east-2

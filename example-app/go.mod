@@ -1,4 +1,4 @@
-module integration-demo
+module example-app
 
 go 1.16
 
