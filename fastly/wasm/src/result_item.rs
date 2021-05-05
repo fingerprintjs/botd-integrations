@@ -1,0 +1,54 @@
+use fastly::Response;
+use crate::extractors::extract_header_value;
+use crate::constants::{OK_STR, FAILED_STR};
+
+pub struct ResultItem {
+    pub status: String,
+    pub probability: f64,
+    pub kind: String
+}
+
+impl Default for ResultItem {
+    fn default() -> ResultItem {
+        ResultItem {
+            status: "".to_owned(),
+            probability: -1.0,
+            kind: "".to_owned()
+        }
+    }
+}
+
+pub fn get_result_item(verify_response: &Response, status_header: String, prob_header: String, kind_header: String) -> ResultItem {
+    let mut result = ResultItem { ..Default::default() };
+
+    // Extract status
+    let status_option = extract_header_value(verify_response.get_header(status_header));
+    if status_option.is_none() {
+        result.status = FAILED_STR.to_owned();
+        return result;
+    }
+    let status = status_option.unwrap();
+    if !status.eq(OK_STR) {
+        result.status = status;
+        return result;
+    }
+
+    // Extract probability
+    let prob_option = extract_header_value(verify_response.get_header(prob_header));
+    if prob_option.is_none() {
+        result.status = FAILED_STR.to_owned();
+        return result;
+    }
+    result.status = OK_STR.to_owned();
+    result.probability = prob_option.unwrap().parse().unwrap();
+
+    // Extract bot type
+    if kind_header.len() == 0 {
+        return result;
+    }
+    let type_option = extract_header_value(verify_response.get_header(kind_header));
+    if type_option.is_some() {
+        result.kind = type_option.unwrap().parse().unwrap();
+    }
+    return result;
+}

@@ -1,8 +1,16 @@
 //! Default Compute@Edge template program.
 
-use fastly::http::{header, Method, StatusCode, HeaderValue};
+mod injector;
+mod extractors;
+mod result_item;
+mod bot_detector;
+mod constants;
+
+use fastly::http::{header, Method, StatusCode};
 use fastly::{mime, Error, Request, Response, Dictionary};
-use regex::Regex;
+use constants::*;
+use bot_detector::detect;
+use injector::add_bot_detection_script;
 
 /// The name of a backend server associated with this service.
 ///
@@ -11,227 +19,7 @@ use regex::Regex;
 const APP_BACKEND: &str = "Backend";
 const APP_HOST: &str = "botd-example-app.fpjs.sh";
 
-/// The name of a second backend associated with this service.
-const FPJS_BACKEND: &str = "Botd";
-const FPJS_URL: &str = "https://botd.fpapi.io/api/v1/results";
-
-const REQUEST_ID_HEADER: &str = "fpjs-request-id";
-const REQUEST_STATUS_HEADER: &str = "fpjs-request-status";
-
-const BOT_STATUS_HEADER: &str = "fpjs-bot-status";
-const BOT_PROB_HEADER: &str = "fpjs-bot-prob";
-const BOT_TYPE_HEADER: &str = "fpjs-bot-type";
-
-const SEARCH_BOT_STATUS_HEADER: &str = "fpjs-search-bot-status";
-const SEARCH_BOT_PROB_HEADER: &str = "fpjs-search-bot-prob";
-const SEARCH_BOT_TYPE_HEADER: &str = "fpjs-search-bot-type";
-
-const BROWSER_SPOOFING_STATUS_HEADER: &str = "fpjs-browser-spoofing-status";
-const BROWSER_SPOOFING_PROB_HEADER: &str = "fpjs-browser-spoofing-prob";
-
-const VM_STATUS_HEADER: &str = "fpjs-vm-status";
-const VM_PROB_HEADER: &str = "fpjs-vm-prob";
-const VM_TYPE_HEADER: &str = "fpjs-vm-type";
-
-const COOKIE_NAME: &str = "botd-request-id=";
-const COOKIE_HEADER: &str = "cookie";
-
-const SCRIPT_CONNECT: &str = r#"<script async src="https://unpkg.com/@fpjs-incubator/botd-agent@0/dist/botd.umd.min.js" onload="getResults()"></script>"#;
-const SCRIPT_BODY_BEGIN: &str = r#"
-    <script>
-        async function getResults() {
-            const botdPromise = FPJSBotDetect.load({
-            token: ""#;
-const SCRIPT_BODY_END: &str = r#"",
-            async: true,
-        })
-        const botd = await botdPromise
-        const result = await botd.get({isPlayground: true})
-        }
-    </script>"#;
-
 const FORBIDDEN_BODY: &str = "{\"error\": {\"code\": 403, \"description\": \"Forbidden\"}}";
-
-const FAILED_STR: &str = "failed";
-const OK_STR: &str = "ok";
-
-fn add_bot_detection_script(html: Box<str>, token: &str) -> String {
-    let mut fpjs_html = String::from(html);
-    let head_close_regex = Regex::new(r"(</head.*>)").unwrap();
-    let connect_index = head_close_regex.find(&*fpjs_html).unwrap().start();
-    fpjs_html.insert_str(connect_index, SCRIPT_CONNECT);
-    let body_open_regex = Regex::new(r"(<body.*>)").unwrap();
-    let mut script_index = body_open_regex.find(&*fpjs_html).unwrap().end();
-    fpjs_html.insert_str(script_index, SCRIPT_BODY_BEGIN);
-    script_index += SCRIPT_BODY_BEGIN.len();
-    fpjs_html.insert_str(script_index, token);
-    script_index += token.len();
-    fpjs_html.insert_str(script_index, SCRIPT_BODY_END);
-    return fpjs_html;
-}
-
-fn get_header_value(h: Option<&HeaderValue>) -> Option<String> {
-    if h.is_none() {
-        return Option::None;
-    }
-    return Option::Some(h.unwrap().to_str().unwrap().parse().unwrap());
-}
-
-fn extract_cookie_element(cookie: &str, element_name: &str) -> Option<String> {
-    let position = cookie.find(element_name);
-    let mut value: String = String::new();
-    if position.is_some() {
-        let pos = position.unwrap() + element_name.len();
-        for i in pos..cookie.len() {
-            let ch = cookie.chars().nth(i).unwrap();
-            if ch != ' ' && ch != ';' {
-                value.push(ch);
-            } else {
-                break;
-            }
-        }
-    } else {
-        return Option::None;
-    }
-    return Option::Some(value);
-}
-
-struct SingleResult {
-    status: String,
-    probability: f64,
-    kind: String
-}
-
-impl Default for SingleResult {
-    fn default() -> SingleResult {
-        SingleResult {
-            status: "".to_owned(),
-            probability: -1.0,
-            kind: "".to_owned()
-        }
-    }
-}
-
-struct BotDetectionResult {
-    request_id: String,
-    request_status: String,
-
-    bot: SingleResult,
-    search_bot: SingleResult,
-    vm: SingleResult,
-    browser_spoofing: SingleResult,
-}
-
-fn get_single_result(verify_response: &Response, status_header: String, prob_header: String, kind_header: String) -> SingleResult {
-    let mut result = SingleResult{
-        status: "".to_string(),
-        probability: -1.0,
-        kind: "".to_string()
-    };
-
-    let status_option = get_header_value(verify_response.get_header(status_header));
-    if status_option.is_none() {
-        result.status = FAILED_STR.to_owned();
-        return result;
-    }
-    let status = status_option.unwrap();
-
-    if status.eq(OK_STR) {
-        // Extract probability
-        let prob_option = get_header_value(verify_response.get_header(prob_header));
-        if prob_option.is_none() {
-            result.status = FAILED_STR.to_owned();
-            return result;
-        }
-        result.status = OK_STR.to_owned();
-        result.probability = prob_option.unwrap().parse().unwrap();
-
-        // Extract bot type
-        if kind_header.len() == 0 {
-            return result;
-        }
-        let type_option = get_header_value(verify_response.get_header(kind_header));
-        if type_option.is_none() {
-            return result;
-        }
-        result.kind = type_option.unwrap().parse().unwrap();
-        return result;
-    } else {
-        result.status = status;
-    }
-    return result;
-}
-
-fn bot_detection(req: &Request, token: &str) -> BotDetectionResult {
-    let mut result = BotDetectionResult {
-        request_id: "".to_owned(),
-        request_status: "".to_owned(),
-
-        bot: SingleResult { ..Default::default() },
-        search_bot: SingleResult { ..Default::default() },
-        vm: SingleResult { ..Default::default() },
-        browser_spoofing: SingleResult{ ..Default::default() },
-    };
-
-    // Get fpjs request id from cookie header
-    let cookie_option = get_header_value(req.get_header(COOKIE_HEADER));
-    if cookie_option.is_none() {
-        result.request_status = FAILED_STR.to_owned();
-        return result;
-    }
-    let cookie_value = cookie_option.unwrap();
-    let cookie_element = extract_cookie_element(&*cookie_value, COOKIE_NAME);
-    if cookie_element.is_none() {
-        result.request_status = FAILED_STR.to_owned();
-        return result;
-    }
-    let fpjs_request_id = cookie_element.unwrap();
-    result.request_id = fpjs_request_id.to_owned();
-
-    // Build request for bot detection
-    let mut verify_request = Request::get(FPJS_URL);
-    let mut query_str: String = "header&token=".to_owned();
-    query_str.push_str(token);
-    query_str.push_str("&id=");
-    query_str.push_str(fpjs_request_id.as_str());
-    verify_request.set_query_str(query_str);
-
-    // Send verify request
-    let verify_response = verify_request.send(FPJS_BACKEND).unwrap();
-
-    // Check status code
-    if !verify_response.get_status().is_success() {
-        result.request_status = FAILED_STR.to_owned();
-        return result;
-    }
-
-    // Extract request status
-    let request_status_option = get_header_value(verify_response.get_header(REQUEST_STATUS_HEADER));
-    if request_status_option.is_none() {
-        result.request_status = FAILED_STR.to_owned();
-        return result;
-    }
-    let request_status = request_status_option.unwrap();
-    if !request_status.eq(OK_STR) {
-        result.request_status = request_status;
-        return result;
-    }
-    result.request_status = OK_STR.to_owned();
-
-    // Extract bot detection status
-    result.bot = get_single_result(&verify_response, BOT_STATUS_HEADER.to_owned(), BOT_PROB_HEADER.to_owned(), BOT_TYPE_HEADER.to_owned());
-
-    // Extract search bot detection status
-    result.search_bot = get_single_result(&verify_response, SEARCH_BOT_STATUS_HEADER.to_owned(), SEARCH_BOT_PROB_HEADER.to_owned(), SEARCH_BOT_TYPE_HEADER.to_owned());
-
-    // Extract vm detection status
-    result.vm = get_single_result(&verify_response, VM_STATUS_HEADER.to_owned(), VM_PROB_HEADER.to_owned(), VM_TYPE_HEADER.to_owned());
-
-    // Extract browser spoofing detection status
-    result.browser_spoofing = get_single_result(&verify_response, BROWSER_SPOOFING_STATUS_HEADER.to_owned(), BROWSER_SPOOFING_PROB_HEADER.to_owned(), "".to_owned());
-
-    return result;
-}
 
 /// The entry point for your application.
 ///
@@ -291,7 +79,7 @@ fn main(mut req: Request) -> Result<Response, Error> {
         }
         "/login" => {
             req.set_pass(true); // TODO: get rid of it
-            let result = bot_detection(&req, token.as_str());
+            let result = detect(&req, token.as_str());
 
             // Decision should we block the request or not
             let botd_calculated = result.request_status.eq(OK_STR)
