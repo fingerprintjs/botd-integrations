@@ -61,6 +61,8 @@ name = "compute-starter-kit-rust-default"
 version = "0.1.0"
 dependencies = [
  "fastly",
+ "log",
+ "log-fastly",
  "regex",
 ]
 
@@ -175,6 +177,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fcf3805d4480bb5b86070dcfeb9e2cb2ebc148adb753c5cca5f884d1d65a42b2"
 dependencies = [
  "cfg-if",
+]
+
+[[package]]
+name = "log-fastly"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "37dd00c151a98f4e51b600ce8dc884600c42e393d81bd7649acdb3434900289e"
+dependencies = [
+ "fastly",
+ "log",
+ "regex",
 ]
 
 [[package]]

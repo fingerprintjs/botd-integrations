@@ -19,6 +19,8 @@ use injector::add_bot_detection_script;
 const APP_BACKEND: &str = "Backend";
 const APP_HOST: &str = "botd-example-app.fpjs.sh";
 
+const LOGGER: &str = "loggly";
+
 const FORBIDDEN_BODY: &str = "{\"error\": {\"code\": 403, \"description\": \"Forbidden\"}}";
 
 /// The entry point for your application.
@@ -30,6 +32,9 @@ const FORBIDDEN_BODY: &str = "{\"error\": {\"code\": 403, \"description\": \"For
 /// If `main` returns an error, a 500 error response will be delivered to the client.
 #[fastly::main]
 fn main(mut req: Request) -> Result<Response, Error> {
+    log_fastly::init_simple(LOGGER, log::LevelFilter::Debug);
+    log::debug!("[Production] Request received from: {}", req.get_client_ip_addr().unwrap().to_string().as_str());
+
     let config = Dictionary::open("config");
     let token_option = config.get("token");
     if token_option.is_none() {
