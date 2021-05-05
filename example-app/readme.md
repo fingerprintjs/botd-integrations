@@ -2,7 +2,7 @@
 
 Web application that FingerprintJS BotD is going to protect - http://botd-example-app.fpjs.sh
 
-### Application workflow
+### Application flow
 
 1. End-user loads an example app from http://botd-integration-demo.fpjs.sh/
 
