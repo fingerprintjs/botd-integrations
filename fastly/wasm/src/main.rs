@@ -78,7 +78,7 @@ fn main(mut req: Request) -> Result<Response, Error> {
                 .with_content_type(mime::TEXT_HTML_UTF_8)
                 .with_body(new_response));
         }
-        "/img/favicon.ico" => {
+        "/favicon.ico" => {
             req.set_pass(true);
             Ok(req.send(APP_BACKEND)?)
         }
