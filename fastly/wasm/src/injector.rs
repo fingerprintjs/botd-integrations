@@ -6,12 +6,12 @@ const SCRIPT_BODY_BEGIN: &str = r#"
     <script>
         async function getResults() {
             const botdPromise = FPJSBotDetect.load({
-            token: ""#;
+                token: ""#;
 const SCRIPT_BODY_END: &str = r#"",
-            async: true,
-        })
-        const botd = await botdPromise
-        const result = await botd.get({isPlayground: true})
+                async: true,
+            })
+            const botd = await botdPromise
+            const result = await botd.get({isPlayground: true})
         }
     </script>"#;
 
