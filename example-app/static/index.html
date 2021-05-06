@@ -120,7 +120,7 @@
         <input type="submit">
     </form>
     <script>
-        function onSubmit() {
+        async function onSubmit() {
             if (localStorage.getItem("fpjs-real-user-agent") === null) {
                 localStorage.setItem("fpjs-real-user-agent", window.navigator.userAgent)
                 console.log("Set fpjs-real-user-agent to " + window.navigator.userAgent)
@@ -143,7 +143,7 @@
                 return
             }
 
-            await window.getResults()
+            await getResults()
 
             //if (document.getElementById('bot').checked)
             //    document.cookie = 'botd-request-id=' + "608aaabbbf1ec4007c47e337"
