@@ -113,16 +113,37 @@
         </svg>
     </a>
     <h1>FingerprintJS BotD Example App</h1>
-    <form class="form" id="login_form" method="post" action="/login" onsubmit="fakeBot()">
+    <form class="form" id="login_form" method="post" action="/login" >
         <label><input name="login" id="login" type="text" placeholder="Login"></label>
         <label><input name="password" id="password" type="password" placeholder="Password"></label>
         <label class="checkbox"><input type="checkbox" id="bot" name="bot">Emulate bot</label>
-        <input type="submit">
+        <input type="submit" onclick="onClick(event)">
     </form>
     <script>
-        function fakeBot() {
-            if (document.getElementById('bot').checked)
-                document.cookie = 'botd-request-id=' + "6092a5c0bdbabe44a188a5a6"
+        async function onClick(event) {
+            event.preventDefault()
+            if (localStorage.getItem("fpjs-real-user-agent") === null) {
+                localStorage.setItem("fpjs-real-user-agent", window.navigator.userAgent)
+            }
+
+            const userAgent = document.getElementById('bot').checked ?
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/90.0.4430.93 Safari/537.36" :
+                localStorage.getItem("fpjs-real-user-agent");
+
+            Object.defineProperty(navigator, 'userAgent', {
+                get: function () {
+                    return userAgent;
+                },
+                configurable: true,
+            });
+
+            console.log("UserAgent set to " + userAgent)
+
+            if (window.getResults) {
+                await getResults()
+            }
+
+            document.querySelector("#login_form").submit()
         }
     </script>
 </div>
