@@ -113,16 +113,40 @@
         </svg>
     </a>
     <h1>FingerprintJS BotD Example App</h1>
-    <form class="form" id="login_form" method="post" action="/login" onsubmit="fakeBot()">
+    <form class="form" id="login_form" method="post" action="/login" onsubmit="onSubmit()">
         <label><input name="login" id="login" type="text" placeholder="Login"></label>
         <label><input name="password" id="password" type="password" placeholder="Password"></label>
         <label class="checkbox"><input type="checkbox" id="bot" name="bot">Emulate bot</label>
         <input type="submit">
     </form>
     <script>
-        function fakeBot() {
-            if (document.getElementById('bot').checked)
-                document.cookie = 'botd-request-id=' + "608aaabbbf1ec4007c47e337"
+        function onSubmit() {
+            if (localStorage.getItem("fpjs-real-user-agent") === null) {
+                localStorage.setItem("fpjs-real-user-agent", window.navigator.userAgent)
+                console.log("Set fpjs-real-user-agent to " + window.navigator.userAgent)
+            }
+
+            const userAgent = document.getElementById('bot').checked ?
+                "chrome headless" :
+                localStorage.getItem("fpjs-real-user-agent");
+
+            Object.defineProperty(navigator, 'userAgent', {
+                get: function () {
+                    return userAgent;
+                }
+            });
+
+            console.log("UserAgent set to " + userAgent)
+
+            if (!window.getResults) {
+                console.log("There is no getResults() function")
+                return
+            }
+
+            await getResults()
+
+            //if (document.getElementById('bot').checked)
+            //    document.cookie = 'botd-request-id=' + "608aaabbbf1ec4007c47e337"
         }
     </script>
 </div>
