@@ -33,11 +33,12 @@ const FORBIDDEN_BODY: &str = "{\"error\": {\"code\": 403, \"description\": \"For
 #[fastly::main]
 fn main(mut req: Request) -> Result<Response, Error> {
     log_fastly::init_simple(LOGGER, log::LevelFilter::Debug);
-    log::debug!("[Production] Request received from: {}", req.get_client_ip_addr().unwrap().to_string().as_str());
+    log::debug!("{} Request received from: {}", ENV, req.get_client_ip_addr().unwrap().to_string().as_str());
 
     let config = Dictionary::open("config");
     let token_option = config.get("token");
     if token_option.is_none() {
+        log::error!("{} Token cannot be extracted from config", ENV);
         return Ok(Response::from_status(StatusCode::INTERNAL_SERVER_ERROR)
             .with_body_str("Token cannot be extracted from fastly configuration\n"))
     }
@@ -90,6 +91,7 @@ fn main(mut req: Request) -> Result<Response, Error> {
             let botd_calculated = result.request_status.eq(OK_STR)
                 && result.bot.status.eq(OK_STR);
             let is_bot = botd_calculated && result.bot.probability >= 0.5;
+            log::debug!("{} is_bot = {}", ENV, is_bot);
 
             return if is_bot {
                 req = req.with_header(REQUEST_ID_HEADER, result.request_id);

@@ -1,3 +1,5 @@
+pub const ENV: &str = "[Production]";
+
 pub const BOTD_BACKEND: &str = "Botd";
 pub const BOTD_URL: &str = "https://botd.fpapi.io/api/v1/results";
 

@@ -27,12 +27,14 @@ pub fn detect(req: &Request, token: &str) -> BotDetectionResult {
     // Get botd request id from cookie header
     let cookie_option = extract_header_value(req.get_header(COOKIE_HEADER));
     if cookie_option.is_none() {
+        log::error!("{} Cookie header cannot be found", ENV);
         result.request_status = FAILED_STR.to_owned();
         return result;
     }
     let cookie_value = cookie_option.unwrap();
     let cookie_element = extract_cookie_element(&*cookie_value, COOKIE_NAME);
     if cookie_element.is_none() {
+        log::error!("{} Cookie element cannot be found", ENV);
         result.request_status = FAILED_STR.to_owned();
         return result;
     }
@@ -52,6 +54,7 @@ pub fn detect(req: &Request, token: &str) -> BotDetectionResult {
 
     // Check status code
     if !verify_response.get_status().is_success() {
+        log::error!("{} Verify request status code is {}", ENV, verify_response.get_status());
         result.request_status = FAILED_STR.to_owned();
         return result;
     }
@@ -59,11 +62,13 @@ pub fn detect(req: &Request, token: &str) -> BotDetectionResult {
     // Extract request status
     let request_status_option = extract_header_value(verify_response.get_header(REQUEST_STATUS_HEADER));
     if request_status_option.is_none() {
+        log::error!("{} Request status cannot be found", ENV);
         result.request_status = FAILED_STR.to_owned();
         return result;
     }
     let request_status = request_status_option.unwrap();
     if !request_status.eq(OK_STR) {
+        log::error!("{} Request status is {}, but expected OK", ENV, request_status);
         result.request_status = request_status;
         return result;
     }

@@ -1,6 +1,6 @@
 use fastly::Response;
 use crate::extractors::extract_header_value;
-use crate::constants::{OK_STR, FAILED_STR};
+use crate::constants::{OK_STR, FAILED_STR, ENV};
 
 pub struct ResultItem {
     pub status: String,
@@ -24,11 +24,13 @@ pub fn get_result_item(verify_response: &Response, status_header: String, prob_h
     // Extract status
     let status_option = extract_header_value(verify_response.get_header(status_header));
     if status_option.is_none() {
+        log::error!("{} Status cannot be found", ENV);
         result.status = FAILED_STR.to_owned();
         return result;
     }
     let status = status_option.unwrap();
     if !status.eq(OK_STR) {
+        log::warn!("{} Request status is {}", ENV, status);
         result.status = status;
         return result;
     }
@@ -36,6 +38,7 @@ pub fn get_result_item(verify_response: &Response, status_header: String, prob_h
     // Extract probability
     let prob_option = extract_header_value(verify_response.get_header(prob_header));
     if prob_option.is_none() {
+        log::error!("{} Probability cannot be found", ENV);
         result.status = FAILED_STR.to_owned();
         return result;
     }
