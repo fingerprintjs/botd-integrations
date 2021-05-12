@@ -1,7 +1,7 @@
 use fastly::{Request, Response};
 use crate::constants::*;
 use crate::result_item::{get_result_item, ResultItem};
-use crate::extractors::{extract_header_value, extract_cookie_element};
+use crate::web_utils::{extract_header_value, extract_cookie_element};
 use crate::config::Config;
 use fastly::http::StatusCode;
 
@@ -101,7 +101,7 @@ pub fn handle_request_with_bot_detect(mut req: Request, config: &Config) -> Resp
     let is_bot = botd_calculated && result.bot.probability >= 0.5;
     log::debug!("is_bot = {}", is_bot);
 
-    if is_bot {
+    return if is_bot {
         req = req.with_header(REQUEST_ID_HEADER, result.request_id);
         req = req.with_header(REQUEST_STATUS_HEADER, result.request_status);
 
@@ -139,9 +139,9 @@ pub fn handle_request_with_bot_detect(mut req: Request, config: &Config) -> Resp
         req.send(APP_BACKEND);
 
         // Return 403 to client
-        return Response::from_status(StatusCode::FORBIDDEN).with_body(FORBIDDEN_BODY)
+        Response::from_status(StatusCode::FORBIDDEN).with_body(FORBIDDEN_BODY)
     } else {
         // No bot => pass the request to backend
-        return req.send(APP_BACKEND).unwrap()
+        req.send(APP_BACKEND).unwrap()
     }
 }

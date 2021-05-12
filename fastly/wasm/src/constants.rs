@@ -1,4 +1,7 @@
+pub const LOGGER: &str = "loggly";
+
 pub const BOTD_BACKEND: &str = "Botd";
+pub const APP_BACKEND: &str = "Backend";
 
 pub const FAILED_STR: &str = "failed";
 pub const OK_STR: &str = "ok";
@@ -23,12 +26,9 @@ pub const VM_TYPE_HEADER: &str = "fpjs-vm-type";
 
 pub const SEC_FETCH_DEST_HEADER: &str = "sec-fetch-dest";
 pub const STATIC_SEC_FETCH_DEST: [&'static str; 7] = ["font", "script", "image", "style", "video", "manifest", "object"]; // TODO: add all static types
+pub const STATIC_PATH_ENDINGS: [&'static str; 7] = [".css", ".js", ".jpg", ".png", ".svg", ".jpeg", ".woff2"]; // TODO: add all static types
 
 pub const COOKIE_NAME: &str = "botd-request-id=";
 pub const COOKIE_HEADER: &str = "cookie";
 
-pub const APP_BACKEND: &str = "Backend";
-
-pub const LOGGER: &str = "loggly";
-
-pub(crate) const FORBIDDEN_BODY: &str = "{\"error\": {\"code\": 403, \"description\": \"Forbidden\"}}";
+pub const FORBIDDEN_BODY: &str = "{\"error\": {\"code\": 403, \"description\": \"Forbidden\"}}";

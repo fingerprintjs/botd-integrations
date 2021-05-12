@@ -1,5 +1,5 @@
 use fastly::Response;
-use crate::extractors::extract_header_value;
+use crate::web_utils::extract_header_value;
 use crate::constants::{OK_STR, FAILED_STR};
 
 pub struct ResultItem {

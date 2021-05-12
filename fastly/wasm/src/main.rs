@@ -1,7 +1,7 @@
 //! Default Compute@Edge template program.
 
 mod injector;
-mod extractors;
+mod web_utils;
 mod result_item;
 mod bot_detector;
 mod constants;
@@ -13,7 +13,7 @@ use constants::*;
 use injector::add_bot_detection_script;
 use crate::config::read_config;
 use crate::bot_detector::handle_request_with_bot_detect;
-use crate::extractors::extract_header_value;
+use crate::web_utils::{extract_header_value, is_static_requested};
 
 #[fastly::main]
 fn main(mut req: Request) -> Result<Response, Error> {
@@ -38,7 +38,7 @@ fn main(mut req: Request) -> Result<Response, Error> {
 
     // Filter request methods...
     match req.get_method() {
-        // Allow GET and HEAD requests.
+        // Allow GET, POST, HEAD requests.
         &Method::GET | &Method::HEAD | &Method::POST => (),
 
         &Method::OPTIONS => {
@@ -73,15 +73,8 @@ fn main(mut req: Request) -> Result<Response, Error> {
         _ => {
             req.set_pass(true); // TODO: get rid of it
 
-            // Check if static requested; pass the request if true
-            let sec_fetch_dest_option = extract_header_value(req.get_header(SEC_FETCH_DEST_HEADER.to_owned()));
-            if sec_fetch_dest_option.is_some() {
-                let sec_fetch_dest = sec_fetch_dest_option.unwrap();
-                for s in &STATIC_SEC_FETCH_DEST {
-                    if sec_fetch_dest.eq(s) {
-                        return Ok(req.send(APP_BACKEND).unwrap());
-                    }
-                }
+            if is_static_requested(&req) {
+                return Ok(req.send(APP_BACKEND).unwrap());
             }
 
             return Ok(handle_request_with_bot_detect(req, &config))
