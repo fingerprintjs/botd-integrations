@@ -1,7 +1,4 @@
 use fastly::{Dictionary, Error};
-use log::LevelFilter;
-use chrono::Local;
-use env_logger::Builder;
 
 pub struct Config {
     pub env: String,
@@ -18,23 +15,6 @@ fn get_variable(name: &str, dictionary: &Dictionary) -> String {
         panic!(msg)
     }
     return option.unwrap();
-}
-
-fn init_logger(env: &str) {
-    // TODO: add env to logger format
-
-    /*Builder::new()
-        .format(move |buf, record|
-            writeln!(buf,
-                     "{} [{}] [{}] - {}",
-                     Local::now().format("%Y-%m-%dT%H:%M:%S"),
-                     record.level(),
-                     env,
-                     record.args()
-            )
-        )
-        .filter(None, LevelFilter::Info)
-        .init()*/
 }
 
 pub fn read_config() -> Result<Config, Error> {

@@ -1,5 +1,3 @@
-pub const LOGGER: &str = "loggly";
-
 pub const BOTD_BACKEND: &str = "Botd";
 pub const APP_BACKEND: &str = "Backend";
 

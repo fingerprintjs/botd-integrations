@@ -136,7 +136,7 @@ pub fn handle_request_with_bot_detect(mut req: Request, config: &Config) -> Resp
         req.set_body(FORBIDDEN_BODY);
 
         // Send request to backend
-        req.send(APP_BACKEND);
+        let _result = req.send(APP_BACKEND);
 
         // Return 403 to client
         Response::from_status(StatusCode::FORBIDDEN).with_body(FORBIDDEN_BODY)
