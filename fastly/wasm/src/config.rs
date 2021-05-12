@@ -22,6 +22,7 @@ fn get_variable(name: &str, dictionary: &Dictionary) -> String {
 
 fn init_logger(env: &str) {
     // TODO: add env to logger format
+
     /*Builder::new()
         .format(move |buf, record|
             writeln!(buf,
@@ -39,9 +40,6 @@ fn init_logger(env: &str) {
 pub fn read_config() -> Result<Config, Error> {
     let dictionary = Dictionary::open("config");
     let env = get_variable("env", &dictionary);
-
-    init_logger(&env.clone());
-
     let botd_token = get_variable("botd_token", &dictionary);
     let botd_results_url = get_variable("botd_results_url", &dictionary);
     let app_backend_url = get_variable("app_backend_url", &dictionary);
