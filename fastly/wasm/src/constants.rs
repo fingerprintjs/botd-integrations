@@ -28,5 +28,3 @@ pub const STATIC_PATH_ENDINGS: [&'static str; 7] = [".css", ".js", ".jpg", ".png
 
 pub const COOKIE_NAME: &str = "botd-request-id=";
 pub const COOKIE_HEADER: &str = "cookie";
-
-pub const FORBIDDEN_BODY: &str = "{\"error\": {\"code\": 403, \"description\": \"Forbidden\"}}";

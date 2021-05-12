@@ -27,7 +27,6 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 
 	requestId := r.Header.Get("fpjs-request-id")
 	if requestId != "" {
-		logrus.Info("Received request from bot, detailed information:")
 		logrus.Info("fpjs-request-id = " + requestId)
 		requestStatus := r.Header.Get("fpjs-request-status")
 		logrus.Info("fpjs-request-status = " + requestStatus)
@@ -47,7 +46,6 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 			logrus.Info("fpjs-browser-spoofing-status = " + r.Header.Get("fpjs-browser-spoofing-status"))
 			logrus.Info("fpjs-browser-spoofing-prob = " + r.Header.Get("fpjs-browser-spoofing-prob"))
 		}
-		return
 	}
 
 	login := r.FormValue("login")

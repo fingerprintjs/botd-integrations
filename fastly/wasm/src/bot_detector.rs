@@ -3,7 +3,6 @@ use crate::constants::*;
 use crate::result_item::{get_result_item, ResultItem};
 use crate::web_utils::{extract_header_value, extract_cookie_element};
 use crate::config::Config;
-use fastly::http::StatusCode;
 
 struct BotDetectionResult {
     pub request_id: String,
@@ -95,12 +94,6 @@ fn bot_detect(req: &Request, config: &Config) -> BotDetectionResult {
 pub fn handle_request_with_bot_detect(mut req: Request, config: &Config) -> Response {
     let result = bot_detect(&req, &config);
 
-    // Decision should we block the request or not
-    let botd_calculated = result.request_status.eq(OK_STR)
-        && result.bot.status.eq(OK_STR);
-    let is_bot = botd_calculated && result.bot.probability >= 0.5;
-    log::debug!("is_bot = {}", is_bot);
-
     req = req.with_header(REQUEST_ID_HEADER, result.request_id);
     req = req.with_header(REQUEST_STATUS_HEADER, result.request_status);
 
@@ -131,17 +124,5 @@ pub fn handle_request_with_bot_detect(mut req: Request, config: &Config) -> Resp
         req = req.with_header(BROWSER_SPOOFING_PROB_HEADER, format!("{:.2}", result.browser_spoofing.probability));
     }
 
-    return if is_bot {
-        // Change body of request
-        req.set_body(FORBIDDEN_BODY);
-
-        // Send request to backend
-        let _result = req.send(APP_BACKEND);
-
-        // Return 403 to client
-        Response::from_status(StatusCode::FORBIDDEN).with_body(FORBIDDEN_BODY)
-    } else {
-        // No bot => pass the request to backend
-        req.send(APP_BACKEND).unwrap()
-    }
+    return req.send(APP_BACKEND).unwrap();
 }
