@@ -28,7 +28,7 @@ pub fn extract_cookie_element(cookie: &str, element_name: &str) -> Option<String
 }
 
 pub fn is_static_requested(req: &Request) -> bool {
-    // sec-fetch-dest header shows which content was requested, but it works only in chrome
+    // sec-fetch-dest header shows which content was requested, but it works not in all web-browsers
     let sec_fetch_dest_option = extract_header_value(req.get_header(SEC_FETCH_DEST_HEADER.to_owned()));
     if sec_fetch_dest_option.is_some() {
         let sec_fetch_dest = sec_fetch_dest_option.unwrap();
@@ -40,7 +40,7 @@ pub fn is_static_requested(req: &Request) -> bool {
         return false;
     }
 
-    // sec-fetch-dest doesn't exist, filter by path ending
+    // sec-fetch-dest header doesn't exist => check by path ending
     for s in &STATIC_PATH_ENDINGS {
         if req.get_path().ends_with(s) {
             return true;
