@@ -23,5 +23,5 @@ pub fn read_config() -> Result<Config, Error> {
     let botd_token = get_variable("botd_token", &dictionary);
     let botd_results_url = get_variable("botd_results_url", &dictionary);
     let app_backend_url = get_variable("app_backend_url", &dictionary);
-    return Result::Ok(Config{env: env.to_owned(), botd_token, botd_results_url, app_backend_url})
+    return Result::Ok(Config{env, botd_token, botd_results_url, app_backend_url})
 }
