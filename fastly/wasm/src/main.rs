@@ -20,12 +20,12 @@ fn main(mut req: Request) -> Result<Response, Error> {
     let config_result = read_config();
     if config_result.is_err() {
         return Ok(Response::from_status(StatusCode::INTERNAL_SERVER_ERROR)
-            .with_body_str("Cannot read Fastly configuration\n"))
+            .with_body_str("cannot read Fastly configuration\n"))
     }
     let config = config_result.unwrap();
 
     log_fastly::init_simple(config.env.to_owned(), log::LevelFilter::Debug);
-    log::debug!("Request received from: {}", req.get_client_ip_addr().unwrap().to_string().as_str());
+    log::debug!("request received from: {}, path: {}", req.get_client_ip_addr().unwrap().to_string().as_str(), req.get_path());
 
     // Set HOST header for CORS policy
     let mut app_backend_host = config.app_backend_url.to_string();
@@ -60,6 +60,7 @@ fn main(mut req: Request) -> Result<Response, Error> {
     // Pattern match on the path.
     return match req.get_path() {
         "/" => {
+            log::debug!("index page, inserting bot detection script...");
             req.set_pass(true); // TODO: get rid of it
 
             let request = Request::get(config.app_backend_url.to_owned());
@@ -72,11 +73,12 @@ fn main(mut req: Request) -> Result<Response, Error> {
         }
         _ => {
             req.set_pass(true); // TODO: get rid of it
-
             if is_static_requested(&req) {
+                log::debug!("path: {}, static requested => skipped bot detection", req.get_path());
                 return Ok(req.send(APP_BACKEND).unwrap());
             }
 
+            log::debug!("path: {}, not static => do bot detection", req.get_path());
             return Ok(handle_request_with_bot_detect(req, &config))
         }
     }

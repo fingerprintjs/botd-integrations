@@ -28,14 +28,14 @@ fn bot_detect(req: &Request, config: &Config) -> BotDetectionResult {
     // Get botd request id from cookie header
     let cookie_option = extract_header_value(req.get_header(COOKIE_HEADER));
     if cookie_option.is_none() {
-        log::error!("Cookie header cannot be found");
+        log::error!("path: {}, cookie header cannot be found", req.get_path());
         result.request_status = FAILED_STR.to_owned();
         return result;
     }
     let cookie_value = cookie_option.unwrap();
     let cookie_element = extract_cookie_element(&*cookie_value, COOKIE_NAME);
     if cookie_element.is_none() {
-        log::error!("Cookie element cannot be found");
+        log::error!("path: {}, cookie element cannot be found", req.get_path());
         result.request_status = FAILED_STR.to_owned();
         return result;
     }
@@ -55,8 +55,8 @@ fn bot_detect(req: &Request, config: &Config) -> BotDetectionResult {
 
     // Check status code
     if !verify_response.get_status().is_success() {
-        log::error!("Verify request status code is {}", verify_response.get_status());
-        log::error!("Verify link is {}?{}", config.botd_results_url.to_owned(), query_str.to_owned());
+        log::error!("path: {}, verify status code: {}, link: {}?{}", req.get_path(),
+                    verify_response.get_status(), config.botd_results_url.to_owned(), query_str.to_owned());
         result.request_status = FAILED_STR.to_owned();
         return result;
     }
@@ -64,13 +64,13 @@ fn bot_detect(req: &Request, config: &Config) -> BotDetectionResult {
     // Extract request status
     let request_status_option = extract_header_value(verify_response.get_header(REQUEST_STATUS_HEADER));
     if request_status_option.is_none() {
-        log::error!("Request status cannot be found");
+        log::error!("path: {}, request status cannot be found", req.get_path());
         result.request_status = FAILED_STR.to_owned();
         return result;
     }
     let request_status = request_status_option.unwrap();
     if !request_status.eq(OK_STR) {
-        log::error!("Request status is {}, but expected OK", request_status);
+        log::warn!("path: {}, request status is {}, but expected OK", req.get_path(), request_status);
         result.request_status = request_status;
         return result;
     }
@@ -94,34 +94,57 @@ fn bot_detect(req: &Request, config: &Config) -> BotDetectionResult {
 pub fn handle_request_with_bot_detect(mut req: Request, config: &Config) -> Response {
     let result = bot_detect(&req, &config);
 
-    req = req.with_header(REQUEST_ID_HEADER, result.request_id);
-    req = req.with_header(REQUEST_STATUS_HEADER, result.request_status);
+    req = req.with_header(REQUEST_ID_HEADER, result.request_id.to_owned());
+    req = req.with_header(REQUEST_STATUS_HEADER, result.request_status.to_owned());
+    log::debug!("path: {}, {}: {}, {}: {}", req.get_path(), REQUEST_ID_HEADER, result.request_id.to_owned(),
+                REQUEST_STATUS_HEADER, result.request_status.to_owned());
 
-    // Set bot detection result to header
-    req = req.with_header(BOT_STATUS_HEADER, result.bot.status.as_str());
-    if result.bot.status.eq(OK_STR) {
-        req = req.with_header(BOT_PROB_HEADER, format!("{:.2}", result.bot.probability));
-        req = req.with_header(BOT_TYPE_HEADER, result.bot.kind);
-    }
+    if result.request_status.eq(OK_STR) {
+        // Set bot detection result to header
+        req = req.with_header(BOT_STATUS_HEADER, result.bot.status.as_str());
+        if result.bot.status.eq(OK_STR) {
+            req = req.with_header(BOT_PROB_HEADER, format!("{:.2}", result.bot.probability));
+            req = req.with_header(BOT_TYPE_HEADER, result.bot.kind.to_owned());
+            log::debug!("path: {}, {}: {}, {}: {}, {}: {}", req.get_path(), BOT_STATUS_HEADER,
+                        result.bot.status.as_str(), BOT_PROB_HEADER, result.bot.probability,
+                        BOT_TYPE_HEADER, result.bot.kind.to_owned());
+        } else {
+            log::debug!("path: {}, {}: {}", req.get_path(), BOT_STATUS_HEADER, result.bot.status.as_str());
+        }
 
-    // Set search bot detection result to header
-    req = req.with_header(SEARCH_BOT_STATUS_HEADER, result.search_bot.status.as_str());
-    if result.search_bot.status.eq(OK_STR) {
-        req = req.with_header(SEARCH_BOT_PROB_HEADER, format!("{:.2}", result.search_bot.probability));
-        req = req.with_header(SEARCH_BOT_TYPE_HEADER, result.search_bot.kind);
-    }
+        // Set search bot detection result to header
+        req = req.with_header(SEARCH_BOT_STATUS_HEADER, result.search_bot.status.as_str());
+        if result.search_bot.status.eq(OK_STR) {
+            req = req.with_header(SEARCH_BOT_PROB_HEADER, format!("{:.2}", result.search_bot.probability));
+            req = req.with_header(SEARCH_BOT_TYPE_HEADER, result.search_bot.kind.to_owned());
+            log::debug!("path: {}, {}: {}, {}: {}, {}: {}", req.get_path(), SEARCH_BOT_STATUS_HEADER,
+                        result.search_bot.status.as_str(), SEARCH_BOT_PROB_HEADER, result.search_bot.probability,
+                        SEARCH_BOT_TYPE_HEADER, result.search_bot.kind.to_owned());
+        } else {
+            log::debug!("path: {}, {}: {}", req.get_path(), SEARCH_BOT_STATUS_HEADER, result.search_bot.status.as_str());
+        }
 
-    // Set vm detection result to header
-    req = req.with_header(VM_STATUS_HEADER, result.vm.status.as_str());
-    if result.vm.status.eq(OK_STR) {
-        req = req.with_header(VM_PROB_HEADER, format!("{:.2}", result.vm.probability));
-        req = req.with_header(VM_TYPE_HEADER, result.vm.kind);
-    }
+        // Set vm detection result to header
+        req = req.with_header(VM_STATUS_HEADER, result.vm.status.as_str());
+        if result.vm.status.eq(OK_STR) {
+            req = req.with_header(VM_PROB_HEADER, format!("{:.2}", result.vm.probability));
+            req = req.with_header(VM_TYPE_HEADER, result.vm.kind.to_owned());
+            log::debug!("path: {}, {}: {}, {}: {}, {}: {}", req.get_path(), VM_STATUS_HEADER,
+                        result.vm.status.as_str(), VM_PROB_HEADER, result.vm.probability,
+                        VM_TYPE_HEADER, result.vm.kind.to_owned());
+        } else {
+            log::debug!("path: {}, {}: {}", req.get_path(), VM_STATUS_HEADER, result.vm.status.as_str());
+        }
 
-    // Set browser spoofing detection result to header
-    req = req.with_header(BROWSER_SPOOFING_STATUS_HEADER, result.browser_spoofing.status.as_str());
-    if result.browser_spoofing.status.eq(OK_STR) {
-        req = req.with_header(BROWSER_SPOOFING_PROB_HEADER, format!("{:.2}", result.browser_spoofing.probability));
+        // Set browser spoofing detection result to header
+        req = req.with_header(BROWSER_SPOOFING_STATUS_HEADER, result.browser_spoofing.status.as_str());
+        if result.browser_spoofing.status.eq(OK_STR) {
+            req = req.with_header(BROWSER_SPOOFING_PROB_HEADER, format!("{:.2}", result.browser_spoofing.probability));
+            log::debug!("path: {}, {}: {}, {}: {}", req.get_path(), BROWSER_SPOOFING_STATUS_HEADER,
+                        result.browser_spoofing.status.as_str(), BROWSER_SPOOFING_PROB_HEADER, result.browser_spoofing.probability);
+        } else {
+            log::debug!("path: {}, {}: {}", req.get_path(), BROWSER_SPOOFING_STATUS_HEADER, result.browser_spoofing.status.as_str());
+        }
     }
 
     return req.send(APP_BACKEND).unwrap();

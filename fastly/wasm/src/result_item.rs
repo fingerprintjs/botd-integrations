@@ -22,23 +22,23 @@ pub fn get_result_item(verify_response: &Response, status_header: String, prob_h
     let mut result = ResultItem { ..Default::default() };
 
     // Extract status
-    let status_option = extract_header_value(verify_response.get_header(status_header));
+    let status_option = extract_header_value(verify_response.get_header(status_header.to_owned()));
     if status_option.is_none() {
-        log::error!("Status cannot be found");
+        log::error!("get_result_item: {} header cannot be found", status_header.to_owned());
         result.status = FAILED_STR.to_owned();
         return result;
     }
     let status = status_option.unwrap();
     if !status.eq(OK_STR) {
-        log::warn!("Request status is {}", status);
+        log::warn!("get_result_item: request status is {}", status);
         result.status = status;
         return result;
     }
 
     // Extract probability
-    let prob_option = extract_header_value(verify_response.get_header(prob_header));
+    let prob_option = extract_header_value(verify_response.get_header(prob_header.to_owned()));
     if prob_option.is_none() {
-        log::error!("Probability cannot be found");
+        log::error!("get_result_item: {} header cannot be found", prob_header.to_owned());
         result.status = FAILED_STR.to_owned();
         return result;
     }
