@@ -3,6 +3,7 @@ use crate::constants::*;
 use crate::result_item::{get_result_item, ResultItem};
 use crate::web_utils::{extract_header_value, extract_cookie_element};
 use crate::config::Config;
+use std::any::Any;
 
 struct BotDetectionResult {
     pub request_id: String,
@@ -141,8 +142,9 @@ pub fn handle_request_with_bot_detect(mut req: Request, config: &Config) -> Resp
         req = req.with_header(BROWSER_SPOOFING_STATUS_HEADER, result.browser_spoofing.status.as_str());
         if result.browser_spoofing.status.eq(OK_STR) {
             req = req.with_header(BROWSER_SPOOFING_PROB_HEADER, format!("{:.2}", result.browser_spoofing.probability));
-            log::debug!("path: {}, {}: {}, {}: {}", req.get_path(), BROWSER_SPOOFING_STATUS_HEADER,
-                        result.browser_spoofing.status.as_str(), BROWSER_SPOOFING_PROB_HEADER, result.browser_spoofing.probability);
+            log::debug!("path: {}, {}: {}, {}: {}, {}: {}", req.get_path(), BROWSER_SPOOFING_STATUS_HEADER,
+                        result.browser_spoofing.status.as_str(), BROWSER_SPOOFING_PROB_HEADER, result.browser_spoofing.probability,
+                        BROWSER_SPOOFING_TYPE_HEADER, result.browser_spoofing.kind.to_owned());
         } else {
             log::debug!("path: {}, {}: {}", req.get_path(), BROWSER_SPOOFING_STATUS_HEADER, result.browser_spoofing.status.as_str());
         }
