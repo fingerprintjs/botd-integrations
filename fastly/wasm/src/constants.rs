@@ -17,6 +17,7 @@ pub const SEARCH_BOT_TYPE_HEADER: &str = "fpjs-search-bot-type";
 
 pub const BROWSER_SPOOFING_STATUS_HEADER: &str = "fpjs-browser-spoofing-status";
 pub const BROWSER_SPOOFING_PROB_HEADER: &str = "fpjs-browser-spoofing-prob";
+pub const BROWSER_SPOOFING_TYPE_HEADER: &str = "fpjs-browser-spoofing-type";
 
 pub const VM_STATUS_HEADER: &str = "fpjs-vm-status";
 pub const VM_PROB_HEADER: &str = "fpjs-vm-prob";

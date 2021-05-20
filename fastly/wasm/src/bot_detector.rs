@@ -87,7 +87,7 @@ fn bot_detect(req: &Request, config: &Config) -> BotDetectionResult {
     result.vm = get_result_item(&verify_response, VM_STATUS_HEADER.to_owned(), VM_PROB_HEADER.to_owned(), VM_TYPE_HEADER.to_owned());
 
     // Extract browser spoofing detection status
-    result.browser_spoofing = get_result_item(&verify_response, BROWSER_SPOOFING_STATUS_HEADER.to_owned(), BROWSER_SPOOFING_PROB_HEADER.to_owned(), "".to_owned());
+    result.browser_spoofing = get_result_item(&verify_response, BROWSER_SPOOFING_STATUS_HEADER.to_owned(), BROWSER_SPOOFING_PROB_HEADER.to_owned(), BROWSER_SPOOFING_TYPE_HEADER.to_owned());
 
     return result;
 }
