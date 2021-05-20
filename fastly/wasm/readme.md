@@ -32,9 +32,9 @@ Below is the flow diagram:
 Header with request id. Example:
 `fpjs-request-id: 6080277c12b178b86f1f967d`
 #### fpjs-request-status
-Possible values of fpjs-request-status header = [“ok” | “in_progress” | “error”]
+Possible values of fpjs-request-status header = [“processed” | “in_progress” | “error”]
 #### fpjs-bot-status, fpjs-browser-spoofing-status, fpjs-search-bot-status, fpjs-vm-status
-Possible values of status header = [“ok” | “undefined” | “not_enough_info”]
+Possible values of status header = [“processed” | “undefined” | “not_enough_info”]
 #### fpjs-bot-prob, fpjs-browser-spoofing-prob, fpjs-search-bot-prob, fpjs-vm-prob
 Possible values = [0.0 .. 1.0 | -1.0 in case of “undefined”, “not_enough_info” statuses]
 #### fpjs-bot-type
@@ -46,20 +46,21 @@ Possible values = [“vmware”, “parallels” … or empty string]
 ### Headers example:
 ```
 fpjs-request-id: 6080277c12b178b86f1f967d
-fpjs-request-status: ok
+fpjs-request-status: processed
 
-fpjs-bot-status: ok
+fpjs-bot-status: processed
 fpjs-bot-prob: 0.00
 fpjs-bot-type:
 
-fpjs-browser-spoofing-status: ok
+fpjs-browser-spoofing-status: processed
 fpjs-browser-spoofing-prob: 0.00
+fpjs-browser-spoofing-type: 
 
-fpjs-search-bot-status: ok
+fpjs-search-bot-status: processed
 fpjs-search-bot-prob: 0.00
 fpjs-search-bot-type:
 
-fpjs-vm-status: ok
+fpjs-vm-status: processed
 fpjs-vm-prob: 0.00
 fpjs-vm-type:
 ```

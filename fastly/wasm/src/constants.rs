@@ -2,7 +2,7 @@ pub const BOTD_BACKEND: &str = "Botd";
 pub const APP_BACKEND: &str = "Backend";
 
 pub const FAILED_STR: &str = "failed";
-pub const OK_STR: &str = "ok";
+pub const OK_STR: &str = "processed";
 
 pub const REQUEST_ID_HEADER: &str = "fpjs-request-id";
 pub const REQUEST_STATUS_HEADER: &str = "fpjs-request-status";
