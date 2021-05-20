@@ -13,7 +13,7 @@ const SCRIPT_BODY_END: &str = r#"",
         const result = await botd.get({isPlayground: true})
         }
     </script>
-    <script src="https://unpkg.com/@fpjs-incubator/botd-agent@0.1.1/dist/botd.umd.min.js" onload="getResults()"></script>
+    <script src="https://unpkg.com/@fpjs-incubator/botd-agent@0/dist/botd.umd.min.js" onload="getResults()"></script>
     "#;
 
 pub fn add_bot_detection_script(html: Box<str>, config: &Config) -> String {

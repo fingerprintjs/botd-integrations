@@ -41,6 +41,7 @@ fn bot_detect(req: &Request, config: &Config) -> BotDetectionResult {
     }
     let request_id = cookie_element.unwrap();
     result.request_id = request_id.to_owned();
+    log::debug!("path: {}, requestId = {}", req.get_path(), request_id.to_owned());
 
     // Build request for bot detection
     let mut verify_request = Request::get(config.botd_results_url.to_owned());
