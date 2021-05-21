@@ -48,9 +48,9 @@ Possible values = [“vmware”, “parallels” … or empty string]
 fpjs-request-id: 6080277c12b178b86f1f967d
 fpjs-request-status: processed
 
-fpjs-bot-status: processed
-fpjs-bot-prob: 0.00
-fpjs-bot-type:
+fpjs-automation-tool-status: processed
+fpjs-automation-tool-prob: 0.00
+fpjs-automation-tool-type:
 
 fpjs-browser-spoofing-status: processed
 fpjs-browser-spoofing-prob: 0.00

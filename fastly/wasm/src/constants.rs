@@ -7,9 +7,9 @@ pub const OK_STR: &str = "processed";
 pub const REQUEST_ID_HEADER: &str = "fpjs-request-id";
 pub const REQUEST_STATUS_HEADER: &str = "fpjs-request-status";
 
-pub const BOT_STATUS_HEADER: &str = "fpjs-bot-status";
-pub const BOT_PROB_HEADER: &str = "fpjs-bot-prob";
-pub const BOT_TYPE_HEADER: &str = "fpjs-bot-type";
+pub const AUTOMATION_TOOL_STATUS_HEADER: &str = "fpjs-automation-tool-status";
+pub const AUTOMATION_TOOL_PROB_HEADER: &str = "fpjs-automation-tool-prob";
+pub const AUTOMATION_TOOL_TYPE_HEADER: &str = "fpjs-automation-tool-type";
 
 pub const SEARCH_BOT_STATUS_HEADER: &str = "fpjs-search-bot-status";
 pub const SEARCH_BOT_PROB_HEADER: &str = "fpjs-search-bot-prob";
