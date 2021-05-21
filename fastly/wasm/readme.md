@@ -38,7 +38,7 @@ Possible values of status header = [“processed” | “undefined” | “not_e
 #### fpjs-bot-prob, fpjs-browser-spoofing-prob, fpjs-search-bot-prob, fpjs-vm-prob
 Possible values = [0.0 .. 1.0 | -1.0 in case of “undefined”, “not_enough_info” statuses]
 #### fpjs-bot-type
-Possible values = [“phantomjs”, “chrome_headless” … or empty string]
+Possible values = [“phantomjs”, “chromeHeadless” … or empty string]
 #### fpjs-search-bot-type
 Possible values = [“google”, “yandex” … or empty string]
 #### fpjs-vm-type
@@ -48,9 +48,9 @@ Possible values = [“vmware”, “parallels” … or empty string]
 fpjs-request-id: 6080277c12b178b86f1f967d
 fpjs-request-status: processed
 
-fpjs-automation-tool-status: processed
-fpjs-automation-tool-prob: 0.00
-fpjs-automation-tool-type:
+fpjs-bot-status: processed
+fpjs-bot-prob: 0.00
+fpjs-bot-type:
 
 fpjs-browser-spoofing-status: processed
 fpjs-browser-spoofing-prob: 0.00

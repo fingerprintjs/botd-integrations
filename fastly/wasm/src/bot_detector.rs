@@ -79,7 +79,7 @@ fn bot_detect(req: &Request, config: &Config) -> BotDetectionResult {
     result.request_status = OK_STR.to_owned();
 
     // Extract bot detection status
-    result.bot = get_result_item(&verify_response, AUTOMATION_TOOL_STATUS_HEADER.to_owned(), AUTOMATION_TOOL_PROB_HEADER.to_owned(), AUTOMATION_TOOL_TYPE_HEADER.to_owned());
+    result.bot = get_result_item(&verify_response, BOT_STATUS_HEADER.to_owned(), BOT_PROB_HEADER.to_owned(), BOT_TYPE_HEADER.to_owned());
 
     // Extract search bot detection status
     result.search_bot = get_result_item(&verify_response, SEARCH_BOT_STATUS_HEADER.to_owned(), SEARCH_BOT_PROB_HEADER.to_owned(), SEARCH_BOT_TYPE_HEADER.to_owned());
@@ -103,15 +103,15 @@ pub fn handle_request_with_bot_detect(mut req: Request, config: &Config) -> Resp
 
     if result.request_status.eq(OK_STR) {
         // Set bot detection result to header
-        req = req.with_header(AUTOMATION_TOOL_STATUS_HEADER, result.bot.status.as_str());
+        req = req.with_header(BOT_STATUS_HEADER, result.bot.status.as_str());
         if result.bot.status.eq(OK_STR) {
-            req = req.with_header(AUTOMATION_TOOL_PROB_HEADER, format!("{:.2}", result.bot.probability));
-            req = req.with_header(AUTOMATION_TOOL_TYPE_HEADER, result.bot.kind.to_owned());
-            log::debug!("path: {}, {}: {}, {}: {}, {}: {}", req.get_path(), AUTOMATION_TOOL_STATUS_HEADER,
-                        result.bot.status.as_str(), AUTOMATION_TOOL_PROB_HEADER, result.bot.probability,
-                        AUTOMATION_TOOL_TYPE_HEADER, result.bot.kind.to_owned());
+            req = req.with_header(BOT_PROB_HEADER, format!("{:.2}", result.bot.probability));
+            req = req.with_header(BOT_TYPE_HEADER, result.bot.kind.to_owned());
+            log::debug!("path: {}, {}: {}, {}: {}, {}: {}", req.get_path(), BOT_STATUS_HEADER,
+                        result.bot.status.as_str(), BOT_PROB_HEADER, result.bot.probability,
+                        BOT_TYPE_HEADER, result.bot.kind.to_owned());
         } else {
-            log::debug!("path: {}, {}: {}", req.get_path(), AUTOMATION_TOOL_STATUS_HEADER, result.bot.status.as_str());
+            log::debug!("path: {}, {}: {}", req.get_path(), BOT_STATUS_HEADER, result.bot.status.as_str());
         }
 
         // Set search bot detection result to header
