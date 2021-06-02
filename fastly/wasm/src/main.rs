@@ -1,11 +1,10 @@
-//! Default Compute@Edge template program.
-
 mod injector;
 mod web_utils;
 mod result_item;
 mod bot_detector;
 mod constants;
 mod config;
+mod collector;
 
 use fastly::http::{header, Method, StatusCode};
 use fastly::{mime, Error, Request, Response};
@@ -14,6 +13,7 @@ use injector::add_bot_detection_script;
 use config::read_config;
 use bot_detector::handle_request_with_bot_detect;
 use web_utils::{is_static_requested};
+use crate::collector::collect_from_initial_request;
 
 #[fastly::main]
 fn main(mut req: Request) -> Result<Response, Error> {
@@ -57,8 +57,7 @@ fn main(mut req: Request) -> Result<Response, Error> {
         }
     };
 
-    // Pattern match on the path.
-    return match req.get_path() {
+    match req.get_path() {
         "/" => {
             log::debug!("index page, inserting bot detection script...");
             req.set_pass(true); // TODO: get rid of it
@@ -67,13 +66,20 @@ fn main(mut req: Request) -> Result<Response, Error> {
             let response = request.send(APP_BACKEND).unwrap();
             let html_with_script = add_bot_detection_script(Box::from(response.into_body_str()), &config);
 
-            Ok(Response::from_status(StatusCode::OK)
+            return Ok(Response::from_status(StatusCode::OK)
                 .with_content_type(mime::TEXT_HTML_UTF_8)
                 .with_body(html_with_script))
         }
         _ => {
             req.set_pass(true); // TODO: get rid of it
+
             if is_static_requested(&req) {
+                if req.get_path().ends_with(".ico") {
+                    log::debug!("*.ico, starting light bot detection script...");
+                    collect_from_initial_request(&req, &config);
+                    return Ok(req.send(APP_BACKEND).unwrap());
+                }
+
                 log::debug!("path: {}, static requested => skipped bot detection", req.get_path());
                 return Ok(req.send(APP_BACKEND).unwrap());
             }

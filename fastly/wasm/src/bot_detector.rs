@@ -3,7 +3,6 @@ use crate::constants::*;
 use crate::result_item::{get_result_item, ResultItem};
 use crate::web_utils::{extract_header_value, extract_cookie_element};
 use crate::config::Config;
-use std::any::Any;
 
 struct BotDetectionResult {
     pub request_id: String,
@@ -45,7 +44,8 @@ fn bot_detect(req: &Request, config: &Config) -> BotDetectionResult {
     log::debug!("path: {}, requestId = {}", req.get_path(), request_id.to_owned());
 
     // Build request for bot detection
-    let mut verify_request = Request::get(config.botd_results_url.to_owned());
+    let mut verify_request = Request::get(config.botd_url.to_owned());
+    verify_request.set_path(BOTD_RESULT_PATH);
     let mut query_str: String = "header&token=".to_owned();
     query_str.push_str(&*config.botd_token);
     query_str.push_str("&id=");
@@ -58,7 +58,7 @@ fn bot_detect(req: &Request, config: &Config) -> BotDetectionResult {
     // Check status code
     if !verify_response.get_status().is_success() {
         log::error!("path: {}, verify status code: {}, link: {}?{}", req.get_path(),
-                    verify_response.get_status(), config.botd_results_url.to_owned(), query_str.to_owned());
+                    verify_response.get_status(), config.botd_url.to_owned(), query_str.to_owned());
         result.request_status = FAILED_STR.to_owned();
         return result;
     }

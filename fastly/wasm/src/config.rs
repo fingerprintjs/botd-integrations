@@ -3,7 +3,7 @@ use fastly::{Dictionary, Error};
 pub struct Config {
     pub env: String,
     pub botd_token: String,
-    pub botd_results_url: String,
+    pub botd_url: String,
     pub app_backend_url: String,
 }
 
@@ -21,7 +21,7 @@ pub fn read_config() -> Result<Config, Error> {
     let dictionary = Dictionary::open("config");
     let env = get_variable("env", &dictionary);
     let botd_token = get_variable("botd_token", &dictionary);
-    let botd_results_url = get_variable("botd_results_url", &dictionary);
+    let botd_url = get_variable("botd_url", &dictionary);
     let app_backend_url = get_variable("app_backend_url", &dictionary);
-    return Result::Ok(Config{env, botd_token, botd_results_url, app_backend_url})
+    return Result::Ok(Config{env, botd_token, botd_url, app_backend_url})
 }

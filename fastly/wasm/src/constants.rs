@@ -1,4 +1,6 @@
-pub const BOTD_BACKEND: &str = "Botd";
+pub const BOTD_BACKEND: &str = "Ngrok";
+pub const BOTD_RESULT_PATH: &str = "/api/v1/results";
+pub const BOTD_LIGHT_PATH: &str = "/api/v1/light";
 pub const APP_BACKEND: &str = "Backend";
 
 pub const FAILED_STR: &str = "failed";
