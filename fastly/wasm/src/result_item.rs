@@ -24,13 +24,13 @@ pub fn get_result_item(verify_response: &Response, status_header: String, prob_h
     // Extract status
     let status_option = extract_header_value(verify_response.get_header(status_header.to_owned()));
     if status_option.is_none() {
-        log::error!("get_result_item: {} header cannot be found", status_header.to_owned());
+        log::error!("[get_result_item] {} header cannot be found", status_header.to_owned());
         result.status = FAILED_STR.to_owned();
         return result;
     }
     let status = status_option.unwrap();
     if !status.eq(OK_STR) {
-        log::warn!("get_result_item: request status is {}", status);
+        log::error!("[get_result_item] request status is {}", status);
         result.status = status;
         return result;
     }
@@ -38,7 +38,7 @@ pub fn get_result_item(verify_response: &Response, status_header: String, prob_h
     // Extract probability
     let prob_option = extract_header_value(verify_response.get_header(prob_header.to_owned()));
     if prob_option.is_none() {
-        log::error!("get_result_item: {} header cannot be found", prob_header.to_owned());
+        log::error!("[get_result_item] {} header cannot be found", prob_header.to_owned());
         result.status = FAILED_STR.to_owned();
         return result;
     }

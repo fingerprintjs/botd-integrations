@@ -1,13 +1,17 @@
 use regex::Regex;
 use crate::config::Config;
+use crate::constants::BOTD_DEFAULT_PATH;
 
-const SCRIPT_BODY_BEGIN: &str = r#"
+fn get_script(token: String, endpoint: String) -> String {
+    const SCRIPT_BODY_BEGIN: &str = r#"
     <script>
         async function getResults() {
             const botdPromise = FPJSBotDetect.load({
             token: ""#;
-const SCRIPT_BODY_END: &str = r#"",
+    const SCRIPT_BODY_MIDDLE: &str = r#"",
             async: true,
+            endpoint: ""#;
+    const SCRIPT_BODY_END: &str = r#"",
         })
         const botd = await botdPromise
         const result = await botd.get({isPlayground: true})
@@ -15,20 +19,21 @@ const SCRIPT_BODY_END: &str = r#"",
     </script>
     <script src="https://unpkg.com/@fpjs-incubator/botd-agent@0/dist/botd.umd.min.js" onload="getResults()"></script>
     "#;
+    return format!("{}{}{}{}{}", SCRIPT_BODY_BEGIN, token, SCRIPT_BODY_MIDDLE, endpoint, SCRIPT_BODY_END)
+}
 
 pub fn add_bot_detection_script(html: Box<str>, config: &Config) -> String {
     let mut injected_html = String::from(html);
 
+    let endpoint = format!("{}{}", config.botd_url, BOTD_DEFAULT_PATH);
+    let script = get_script(config.botd_token.to_owned(), endpoint.to_owned());
+
+    log::debug!("[add_bot_detection_script] token: {}, endpoint: {}", config.botd_token, endpoint);
+
     let head_regex = Regex::new(r"(<head.*>)").unwrap();
-    let mut script_index = head_regex.find(&*injected_html).unwrap().end();
+    let script_index = head_regex.find(&*injected_html).unwrap().end();
 
-    injected_html.insert_str(script_index, SCRIPT_BODY_BEGIN);
-    script_index += SCRIPT_BODY_BEGIN.len();
-
-    injected_html.insert_str(script_index, &*config.botd_token);
-    script_index += config.botd_token.len();
-
-    injected_html.insert_str(script_index, SCRIPT_BODY_END);
+    injected_html.insert_str(script_index, &script);
 
     return injected_html;
 }
