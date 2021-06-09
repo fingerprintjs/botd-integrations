@@ -14,7 +14,7 @@ pub struct LightDetectResult {
 pub fn set_light_headers(mut req: Request, detect_result: LightDetectResult) -> Request {
     req.set_header(REQUEST_ID_HEADER, detect_result.id);
     req.set_header(REQUEST_STATUS_HEADER, detect_result.status);
-    req.set_header(BOT_PROB_HEADER, detect_result.light_result.probability.to_string());
+    req.set_header(BOT_PROB_HEADER, format!("{:.2}", detect_result.light_result.probability));
     req.set_header(BOT_STATUS_HEADER, detect_result.light_result.status);
     req.set_header(BOT_TYPE_HEADER, detect_result.light_result.kind);
     return req;
