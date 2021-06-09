@@ -1,11 +1,10 @@
-//! Default Compute@Edge template program.
-
 mod injector;
 mod web_utils;
 mod result_item;
 mod bot_detector;
 mod constants;
 mod config;
+mod light;
 
 use fastly::http::{header, Method, StatusCode};
 use fastly::{mime, Error, Request, Response};
@@ -14,27 +13,35 @@ use injector::add_bot_detection_script;
 use config::read_config;
 use bot_detector::handle_request_with_bot_detect;
 use web_utils::{is_static_requested};
+use light::{make_light_detect, set_light_headers};
+use crate::web_utils::get_host_from_url;
 
 #[fastly::main]
 fn main(mut req: Request) -> Result<Response, Error> {
+
     let config_result = read_config();
     if config_result.is_err() {
         return Ok(Response::from_status(StatusCode::INTERNAL_SERVER_ERROR)
-            .with_body_str("cannot read Fastly configuration\n"))
+            .with_body_str("Cannot read Fastly configuration\n"))
     }
     let config = config_result.unwrap();
 
     log_fastly::init_simple(config.env.to_owned(), log::LevelFilter::Debug);
-    log::debug!("request received from: {}, path: {}", req.get_client_ip_addr().unwrap().to_string().as_str(), req.get_path());
+
+    let ip = req.get_client_ip_addr().unwrap().to_string();
+    log::debug!("[main] request received from: {}, url: {}", ip, req.get_url_str());
 
     // Set HOST header for CORS policy
-    let mut app_backend_host = config.app_backend_url.to_string();
-    if app_backend_host.starts_with("http://") {
-        app_backend_host = (&app_backend_host["http://".len()..]).parse()?;
-    } else if app_backend_host.starts_with("https://") {
-        app_backend_host = (&app_backend_host["https://".len()..]).parse()?;
+    let backend_host_op = get_host_from_url(config.app_backend_url.to_owned());
+    if backend_host_op.is_none() {
+        log::error!("[main] wrong app backend url in config app_backend_url: {}", config.app_backend_url);
+        return Ok(Response::from_status(StatusCode::INTERNAL_SERVER_ERROR)
+            .with_body_str(&format!("Wrong app backend url in Fastly configuration: {} \n", config.app_backend_url)))
     }
-    req.set_header(header::HOST, app_backend_host.to_owned());
+    let host = backend_host_op.unwrap();
+
+    req.set_header(header::HOST, host.to_owned());
+    log::debug!("[main] app backend host: {}", host);
 
     // Filter request methods...
     match req.get_method() {
@@ -51,34 +58,49 @@ fn main(mut req: Request) -> Result<Response, Error> {
 
         // Deny anything else.
         _ => {
+            log::error!("[main] method is not allowed: {}", req.get_method());
             return Ok(Response::from_status(StatusCode::METHOD_NOT_ALLOWED)
                 .with_header(header::ALLOW, "GET, HEAD, POST, OPTIONS")
                 .with_body_str("This method is not allowed\n"))
         }
     };
 
-    // Pattern match on the path.
-    return match req.get_path() {
+    match req.get_path() {
         "/" => {
-            log::debug!("index page, inserting bot detection script...");
+            log::debug!("[main] initial request, starting light detect");
             req.set_pass(true); // TODO: get rid of it
 
-            let request = Request::get(config.app_backend_url.to_owned());
-            let response = request.send(APP_BACKEND).unwrap();
-            let html_with_script = add_bot_detection_script(Box::from(response.into_body_str()), &config);
+            let light_result = make_light_detect(&req, &config);
+            let id = light_result.id.clone();
+            let mut request = Request::get(config.app_backend_url.to_owned());
+            request = set_light_headers(request, light_result);
 
-            Ok(Response::from_status(StatusCode::OK)
+            let response = request.send(APP_BACKEND).unwrap();
+            log::debug!("[main] inserting bot detection script");
+            let html_with_script = add_bot_detection_script(Box::from(response.into_body_str()), &config);
+            let cookie_value = format!("{}{}", COOKIE_NAME, id);
+
+            return Ok(Response::from_status(StatusCode::OK)
                 .with_content_type(mime::TEXT_HTML_UTF_8)
+                .with_header(SET_COOKIE_HEADER, cookie_value)
                 .with_body(html_with_script))
         }
         _ => {
             req.set_pass(true); // TODO: get rid of it
+
             if is_static_requested(&req) {
-                log::debug!("path: {}, static requested => skipped bot detection", req.get_path());
+                if req.get_path().ends_with(".ico") {
+                    log::debug!("[main] favicon request, starting light detect");
+                    let light_result = make_light_detect(&req, &config);
+                    let mut request = req;
+                    request = set_light_headers(request, light_result);
+                    return Ok(request.send(APP_BACKEND).unwrap());
+                }
+                log::debug!("[main] path: {}, static requested => skipped bot detection", req.get_path());
                 return Ok(req.send(APP_BACKEND).unwrap());
             }
 
-            log::debug!("path: {}, not static => do bot detection", req.get_path());
+            log::debug!("[main] path: {}, not static => do bot detection", req.get_path());
             return Ok(handle_request_with_bot_detect(req, &config))
         }
     }
