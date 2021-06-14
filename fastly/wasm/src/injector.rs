@@ -6,10 +6,10 @@ fn get_script(token: String, endpoint: String) -> String {
     const SCRIPT_BODY_BEGIN: &str = r#"
     <script>
         async function getResults() {
-            const botdPromise = FPJSBotDetect.load({
+            const botdPromise = Botd.load({
             token: ""#;
     const SCRIPT_BODY_MIDDLE: &str = r#"",
-            async: true,
+            mode: "requestId",
             endpoint: ""#;
     const SCRIPT_BODY_END: &str = r#"",
         })
