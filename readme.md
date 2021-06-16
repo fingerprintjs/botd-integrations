@@ -1,6 +1,5 @@
 # botd integrations
+<img width="1280" alt="bot-detection cloud integration-2" src="https://user-images.githubusercontent.com/27387/122214619-f97ab080-ceb2-11eb-8cca-59cdcab33e8b.png">
 
-<img width="1024" alt="bot-detection cloud integration-1" src="https://user-images.githubusercontent.com/27387/122212962-1a420680-ceb1-11eb-9b47-8c8e9efb90d3.png">
 
-
-This repository contains examples of FingerprintJS BotD integrations with different server-side platforms, using a simple example application.
+## FingerprintJS Botd integrations with cloud providers.
