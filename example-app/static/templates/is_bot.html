@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>FingerprintJS BotD Example App</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="icon" type="image/ico" href="../img/favicon.ico">
+</head>
+<body>
+<div class="content">
+    <a class="logo" href="https://fingerprintjs.com/">
+        <img src='../img/logo.svg' alt='FingerprintJS'>
+    </a>
+    <h1>FingerprintJS BotD Example App</h1>
+    <h2>We think that you are bot!</h2>
+    <h2 id="status">Loading...</h2>
+    <table class="result-table" id="result-table"></table>
+    <a class="link" href="/">Back to login page</a>
+
+    <script>
+        let result = JSON.parse({{.Result}})
+
+        document.getElementById("status").innerHTML = 'Result:'
+        document.getElementById("result-table").innerHTML = [...Object.entries(result.bot), ['vm', result.vm]].map(([key, value]) => {
+            let status = '';
+            let statusClass = '';
+            if (value.status === 'processed') {
+                if (value.probability > 0) {
+                    status = `<b>detected</b> (probability ${value.probability.toFixed(2)})`;
+                    statusClass = 'green';
+                } else {
+                    status = 'not detected';
+                }
+            } else {
+                status = `<b>${value.status}</b>`;
+                statusClass = 'red';
+            }
+            return `<tr><td style='width: 25%'>${key}</td><td class="${statusClass}">${status}</td><td>${value.type || ''}</td></tr>`
+        }).join('');
+    </script>
+</div>
+</body>
+</html>

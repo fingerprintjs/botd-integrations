@@ -1,0 +1,118 @@
+body {
+    width: 100%;
+    min-height: 100vh;
+    padding: 0;
+    margin: 0;
+    font-family: sans-serif;
+}
+
+.logo {
+    width: 300px;
+    height: auto;
+}
+
+h1, h2 {
+    margin: 20px 50px;
+    color: #0d102b;
+}
+
+h1 {
+    font-size: 24px;
+    font-weight: 700;
+}
+
+h2 {
+    font-size: 18px;
+}
+
+.link {
+    margin: 20px 50px;
+}
+
+.content {
+    flex: 1;
+    width: 100%;
+    max-width: 60em;
+    height: 100vh;
+    box-sizing: border-box;
+    margin: 0 auto;
+    padding: 20px 20px 0 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    margin: 0 50px;
+}
+
+label {
+    flex: 1 1;
+    background-color: #FFF;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    border: 2px solid rgba(13, 16, 43, .5);
+    display: flex;
+    align-items: center;
+    padding: 0;
+    max-width: 400px;
+    min-height: 50px;
+}
+
+label.checkbox {
+    border: none;
+    min-height: 20px;
+}
+
+input[type=text], input[type=password] {
+    padding: 0 2rem;
+    width: 500px;
+    height: 100%;
+    box-shadow: none;
+    border-radius: 7px;
+    border: none;
+}
+
+input[type=checkbox] {
+    margin-right: 10px
+}
+
+input:focus {
+    outline: none;
+}
+
+input[type=submit] {
+    border: none;
+    background: #f04405;
+    color: #fff;
+    font: inherit;
+    font-size: 88%;
+    font-weight: 600;
+    line-height: 1.2;
+    border-radius: 10px;
+    cursor: pointer;
+    margin-top: 10px;
+    padding: 0.85em 1.7em;
+    text-align: center;
+    outline: none;
+    max-width: 100px;
+    min-height: 50px;
+}
+
+h5 {
+    margin: 10px;
+    color: #f0470a;
+}
+
+.result-table {
+    margin: 0 50px 10px 50px;
+    line-height: 20px;
+}
+
+.green {
+    color: green;
+}
+.red {
+    color: orangered;
+}
