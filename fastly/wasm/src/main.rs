@@ -4,7 +4,7 @@ mod result_item;
 mod bot_detector;
 mod constants;
 mod config;
-mod light;
+mod light_detector;
 
 use fastly::http::{header, Method, StatusCode};
 use fastly::{mime, Error, Request, Response};
@@ -13,7 +13,7 @@ use injector::add_bot_detection_script;
 use config::read_config;
 use bot_detector::handle_request_with_bot_detect;
 use web_utils::{is_static_requested};
-use light::{make_light_detect, set_light_headers};
+use light_detector::{make_light_detect, set_light_headers};
 use crate::web_utils::get_host_from_url;
 
 #[fastly::main]
@@ -71,7 +71,7 @@ fn main(mut req: Request) -> Result<Response, Error> {
             req.set_pass(true); // TODO: get rid of it
 
             let light_result = make_light_detect(&req, &config);
-            let id = light_result.id.clone();
+            let id = light_result.request_id.clone();
             let mut request = Request::get(config.app_backend_url.to_owned());
             request = set_light_headers(request, light_result);
 

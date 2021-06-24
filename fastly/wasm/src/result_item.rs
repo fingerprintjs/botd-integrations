@@ -1,6 +1,6 @@
 use fastly::Response;
 use crate::web_utils::extract_header_value;
-use crate::constants::{OK_STR, FAILED_STR};
+use crate::constants::{PROCESSED, ERROR};
 
 pub struct ResultItem {
     pub status: String,
@@ -25,11 +25,11 @@ pub fn get_result_item(verify_response: &Response, status_header: String, prob_h
     let status_option = extract_header_value(verify_response.get_header(status_header.to_owned()));
     if status_option.is_none() {
         log::error!("[get_result_item] {} header cannot be found", status_header.to_owned());
-        result.status = FAILED_STR.to_owned();
+        result.status = ERROR.to_owned();
         return result;
     }
     let status = status_option.unwrap();
-    if !status.eq(OK_STR) {
+    if !status.eq(PROCESSED) {
         log::error!("[get_result_item] request status is {}", status);
         result.status = status;
         return result;
@@ -39,10 +39,10 @@ pub fn get_result_item(verify_response: &Response, status_header: String, prob_h
     let prob_option = extract_header_value(verify_response.get_header(prob_header.to_owned()));
     if prob_option.is_none() {
         log::error!("[get_result_item] {} header cannot be found", prob_header.to_owned());
-        result.status = FAILED_STR.to_owned();
+        result.status = ERROR.to_owned();
         return result;
     }
-    result.status = OK_STR.to_owned();
+    result.status = PROCESSED.to_owned();
     result.probability = prob_option.unwrap().parse().unwrap();
 
     // Extract bot type
