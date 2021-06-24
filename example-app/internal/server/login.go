@@ -15,24 +15,24 @@ type ResultTemplate struct {
 const LOGIN = "human"
 const PASSWORD = "iamnotbot"
 
-const HeaderRequestId = "fpjs-request-id"
-const HeaderRequestStatus = "fpjs-request-status"
+const HeaderRequestId = "botd-request-id"
+const HeaderRequestStatus = "botd-request-status"
 
-const HeaderBotStatus = "fpjs-bot-status"
-const HeaderBotProb = "fpjs-bot-prob"
-const HeaderBotType = "fpjs-bot-type"
+const HeaderBotStatus = "botd-automation-tool-status"
+const HeaderBotProb = "botd-automation-tool-prob"
+const HeaderBotType = "botd-automation-tool-type"
 
-const HeaderSearchBotStatus = "fpjs-search-bot-status"
-const HeaderSearchBotProb = "fpjs-search-bot-prob"
-const HeaderSearchBotType = "fpjs-search-bot-type"
+const HeaderSearchBotStatus = "botd-search-bot-status"
+const HeaderSearchBotProb = "botd-search-bot-prob"
+const HeaderSearchBotType = "botd-search-bot-type"
 
-const HeaderVMStatus = "fpjs-vm-status"
-const HeaderVMProb = "fpjs-vm-prob"
-const HeaderVMType = "fpjs-vm-type"
+const HeaderVMStatus = "botd-vm-status"
+const HeaderVMProb = "botd-vm-prob"
+const HeaderVMType = "botd-vm-type"
 
-const HeaderBrowserSpoofingStatus = "fpjs-browser-spoofing-status"
-const HeaderBrowserSpoofingProb = "fpjs-browser-spoofing-prob"
-const HeaderBrowserSpoofingType = "fpjs-browser-spoofing-type"
+const HeaderBrowserSpoofingStatus = "botd-browser-spoofing-status"
+const HeaderBrowserSpoofingProb = "botd-browser-spoofing-prob"
+const HeaderBrowserSpoofingType = "botd-browser-spoofing-type"
 
 func logError(err error, msg string) {
 	if err != nil {
