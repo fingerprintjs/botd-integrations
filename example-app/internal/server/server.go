@@ -7,7 +7,6 @@ import (
 
 func Run() {
 	fs := http.FileServer(http.Dir("./static"))
-
 	http.Handle("/", middlewareController(fs.ServeHTTP))
 	http.Handle("/login", middlewareController(loginHandler))
 
