@@ -17,7 +17,7 @@ fn get_script(token: String, endpoint: String) -> String {
         const result = await botd.get({isPlayground: true})
         }
     </script>
-    <script src="https://unpkg.com/@fpjs-incubator/botd-agent@0/dist/botd.umd.min.js" onload="getResults()"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@fpjs-incubator/botd-agent@0/dist/botd.min.js" onload="getResults()"></script>
     "#;
     return format!("{}{}{}{}{}", SCRIPT_BODY_BEGIN, token, SCRIPT_BODY_MIDDLE, endpoint, SCRIPT_BODY_END)
 }
