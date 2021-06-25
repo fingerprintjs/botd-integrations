@@ -1,4 +1,4 @@
-pub const BOTD_BACKEND: &str = "Stage";
+pub const BOTD_BACKEND: &str = "Botd";
 pub const BOTD_URL: &str = "https://botd.fpapi.io/";
 pub const BOTD_DEFAULT_PATH: &str = "/api/v1/";
 pub const BOTD_RESULT_PATH: &str = "/api/v1/results";
