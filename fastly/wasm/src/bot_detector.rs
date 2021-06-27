@@ -3,7 +3,6 @@ use crate::constants::*;
 use crate::result_item::{get_result_item, ResultItem};
 use crate::web_utils::{extract_header_value, get_cookie_from_request};
 use crate::config::Config;
-use std::borrow::Borrow;
 
 struct BotDetectionResult {
     pub request_id: String,
@@ -48,7 +47,7 @@ fn bot_detect(req: &Request, config: &Config) -> BotDetectionResult {
     query_str.push_str(request_id.as_str());
 
     log::debug!("[bot_detect] path: {}, url: {}?{}", req.get_path(), url.to_owned(), query_str);
-    let mut verify_request = Request::get(url.to_owned()).with_query_str(query_str.to_owned());
+    let verify_request = Request::get(url.to_owned()).with_query_str(query_str.to_owned());
 
     // Send verify request
     let verify_response = verify_request.send(BOTD_BACKEND).unwrap();

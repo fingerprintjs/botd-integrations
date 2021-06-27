@@ -14,7 +14,7 @@ fn get_script(token: String, endpoint: String) -> String {
     const SCRIPT_BODY_END: &str = r#"",
         })
         const botd = await botdPromise
-        const result = await botd.get({isPlayground: true})
+        const result = await botd.detect({isPlayground: true})
         }
     </script>
     <script src="https://cdn.jsdelivr.net/npm/@fpjs-incubator/botd-agent@0/dist/botd.min.js" onload="getResults()"></script>
