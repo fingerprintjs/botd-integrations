@@ -1,4 +1,12 @@
-import { COOKIE_HEADER, COOKIE_NAME } from './constants'
+import {
+  COOKIE_HEADER,
+  COOKIE_NAME,
+  ERROR_DESCRIPTION_HEADER,
+  REQUEST_STATUS_HEADER,
+  SEC_FETCH_DEST_HEADER,
+  STATIC_PATH_ENDINGS,
+  STATIC_SEC_FETCH_DEST, Status,
+} from './constants'
 
 export type HeadersDict = Record<string, unknown>
 
@@ -8,10 +16,9 @@ export interface DetectResultItem {
   type: string
 }
 
-export interface Config {
-  backendURL: string
-  botdURL: string
-  token: string
+export interface DetectResultError {
+  status: Status.ERROR
+  error: string
 }
 
 function getCookie(cookie: string, name: string): string | undefined {
@@ -26,18 +33,47 @@ export function getRequestID(request: Request): string {
   return getCookie(cookies, COOKIE_NAME) || ""
 }
 
-async function getFromConfig(key: string): Promise<string> {
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
-  const value = await CONFIG.get(key)
-  console.log(`Get from config: ${key}: ${value}`)
-  return value
+export function getHeadersDict(requestHeaders: Headers): HeadersDict {
+  const headersDict: HeadersDict = {}
+  for (const [key, value] of requestHeaders) {
+    headersDict[key] = [value]
+  }
+  return headersDict
 }
 
-export async function getConfig(): Promise<Config> {
-  return {
-    backendURL: await getFromConfig("app_backend_url"),
-    botdURL: await getFromConfig("botd_url"),
-    token: await getFromConfig("token")
+export function removeLastSlash(url: string ): string {
+  if (url.endsWith('/'))
+    return url.slice(0, -1)
+  return url
+}
+
+export function setErrorHeaders(r: Request | Response, e: Error): void {
+  r.headers.append(REQUEST_STATUS_HEADER, Status.ERROR)
+  r.headers.append(ERROR_DESCRIPTION_HEADER, e.message)
+}
+
+export function getPathFromURL(url: string): string {
+  return (new URL(url)).pathname
+}
+
+export function isRequestStatic(request: Request): boolean {
+  // sec-fetch-dest header shows which content was requested, but it works not in all web-browsers
+  const secFetchDestOption = request.headers.get(SEC_FETCH_DEST_HEADER)
+  if (secFetchDestOption != null) {
+    for (const s of STATIC_SEC_FETCH_DEST)
+      if (s === secFetchDestOption)
+        return true
+    return false;
   }
+  // sec-fetch-dest header doesn't exist => check by path ending
+  for (const s in STATIC_PATH_ENDINGS){
+    if (request.url.endsWith(s))
+      return true;
+  }
+  return false;
+}
+
+export function isRequestFavicon(request: Request): boolean {
+  const path = getPathFromURL(request.url)
+  return (path.endsWith(".ico") && path.indexOf("fav") > -1)
 }
