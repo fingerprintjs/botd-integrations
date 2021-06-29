@@ -21,6 +21,10 @@ export interface DetectResultError {
   error: string
 }
 
+export function changeURL(newURL: string, request: Request): Request {
+  return new Request(newURL, new Request(request))
+}
+
 function getCookie(cookie: string, name: string): string | undefined {
   const matches = cookie.match(
     new RegExp('(?:^|; )' + name.replace(/([.$?*|{}()[\]\\/+^])/g, '\\$1') + '=([^;]*)'),

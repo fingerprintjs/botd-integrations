@@ -1,6 +1,6 @@
 import { makeLightDetect, setLightDetectHeaders } from '../detectors/light'
 import { injectScript } from '../injector'
-import { getPathFromURL, setErrorHeaders } from '../utils'
+import { changeURL, setErrorHeaders } from '../utils'
 import { getConfig } from '../config'
 
 export default async function handleInitRequest(request: Request): Promise<Response> {
@@ -10,11 +10,12 @@ export default async function handleInitRequest(request: Request): Promise<Respo
     const config = await getConfig(request)
     const lightDetectResult = await makeLightDetect(request, config)
 
-    const actualURL = config.backendURL + getPathFromURL(request.url)
-    const actualRequest = new Request(actualURL, new Request(request))
-    setLightDetectHeaders(actualRequest, lightDetectResult)
+    request = changeURL(config.backendURL, request)
+    setLightDetectHeaders(request, lightDetectResult)
 
-    const response = await fetch(actualRequest)
+    const response = await fetch(request)
+    console.log(`[handleInitRequest] Origin response - Status: ${response.status}`)
+
     const html = await response.text()
     const injected = injectScript(html, config)
 

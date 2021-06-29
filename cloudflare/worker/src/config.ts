@@ -1,4 +1,4 @@
-import { removeLastSlash } from './utils'
+import { getPathFromURL, removeLastSlash } from './utils'
 import { BOTD_DEFAULT_URL } from './constants'
 
 export default interface Config {
@@ -26,9 +26,9 @@ export async function getConfig(request: Request): Promise<Config> {
 
   let backendURL = await getFromConfig("botd_app")
   if (backendURL != null)
-    backendURL = removeLastSlash(backendURL)
+    backendURL = removeLastSlash(backendURL) + getPathFromURL(request.url)
   else
-    backendURL = (new URL(request.url)).origin
+    backendURL = request.url
 
   console.log(`[getConfig] Config - Botd URL: ${botdURL}, App URL: ${backendURL}, Token: ${token}`)
 

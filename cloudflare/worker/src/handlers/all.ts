@@ -1,6 +1,6 @@
 import { getConfig } from '../config'
 import { makeBotDetect, setBotDetectHeaders } from '../detectors/bot'
-import { getPathFromURL, isRequestFavicon, isRequestStatic, setErrorHeaders } from '../utils'
+import { changeURL, isRequestFavicon, isRequestStatic, setErrorHeaders } from '../utils'
 import { makeLightDetect, setLightDetectHeaders } from '../detectors/light'
 
 export default async function handleAll(request: Request): Promise<Response> {
@@ -13,27 +13,22 @@ export default async function handleAll(request: Request): Promise<Response> {
         console.log("[handleAll] Request favicon, starting light bot detection")
 
         const lightDetectResult = await makeLightDetect(request, config)
-        const actualURL = config.backendURL + getPathFromURL(request.url)
-        const actualRequest = new Request(actualURL, new Request(request))
-        setLightDetectHeaders(actualRequest, lightDetectResult)
+        request = changeURL(config.backendURL, request)
+        setLightDetectHeaders(request, lightDetectResult)
 
-        return await fetch(actualRequest)
+        return await fetch(request)
       }
       console.log("[handleAll] Request static data, skipping bot detection")
 
-      const actualURL = config.backendURL + getPathFromURL(request.url)
-      const actualRequest = new Request(actualURL, new Request(request))
-
+      const actualRequest = new Request(config.backendURL, new Request(request))
       return await fetch(actualRequest)
     }
 
     const botDetectResult = await makeBotDetect(request, config)
+    request = changeURL(config.backendURL, request)
+    setBotDetectHeaders(request, botDetectResult)
 
-    const actualURL = config.backendURL + getPathFromURL(request.url)
-    const actualRequest = new Request(actualURL, new Request(request))
-    setBotDetectHeaders(actualRequest, botDetectResult)
-
-    return await fetch(actualRequest)
+    return await fetch(request)
   } catch (e) {
     console.error(`[handleAll] Error handled: ${ e.message }`)
 
