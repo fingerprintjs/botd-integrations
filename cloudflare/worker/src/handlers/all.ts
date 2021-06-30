@@ -1,7 +1,7 @@
 import { getConfig } from '../config'
-import { makeBotDetect, setBotDetectHeaders } from '../detectors/bot'
+import { makeBotDetect, transferBotdHeaders } from '../detectors/bot'
 import { changeURL, isRequestFavicon, isRequestStatic, setErrorHeaders } from '../utils'
-import { makeLightDetect, setLightDetectHeaders } from '../detectors/light'
+import { makeLightDetect, transferLightHeaders } from '../detectors/light'
 
 export default async function handleAll(request: Request): Promise<Response> {
   try {
@@ -12,9 +12,9 @@ export default async function handleAll(request: Request): Promise<Response> {
       if (isRequestFavicon(request)) {
         console.log("[handleAll] Request favicon, starting light bot detection")
 
-        const lightDetectResult = await makeLightDetect(request, config)
+        const lightDetectResponse = await makeLightDetect(request, config)
         request = changeURL(config.backendURL, request)
-        setLightDetectHeaders(request, lightDetectResult)
+        transferLightHeaders(lightDetectResponse, request)
 
         return await fetch(request)
       }
@@ -24,9 +24,9 @@ export default async function handleAll(request: Request): Promise<Response> {
       return await fetch(actualRequest)
     }
 
-    const botDetectResult = await makeBotDetect(request, config)
+    const botDetectResponse = await makeBotDetect(request, config)
     request = changeURL(config.backendURL, request)
-    setBotDetectHeaders(request, botDetectResult)
+    transferBotdHeaders(botDetectResponse, request)
 
     return await fetch(request)
   } catch (e) {
