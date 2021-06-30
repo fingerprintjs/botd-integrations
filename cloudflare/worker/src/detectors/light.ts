@@ -1,9 +1,10 @@
-import { getHeadersDict, getPathFromURL, getRequestID, HeadersDict } from '../utils'
+import { getHeadersDict, getPathFromURL, getRequestID } from '../utils'
 import Config from '../config'
 import { AUTO_TOOL_PROB_HEADER, AUTO_TOOL_STATUS_HEADER, AUTO_TOOL_TYPE_HEADER,
   BOTD_LIGHT_PATH, ERROR_DESCRIPTION_HEADER, POST,
   REQUEST_ID_HEADER, REQUEST_STATUS_HEADER, SET_COOKIE_HEADER, Status,
 } from '../constants'
+import {HeadersDict} from "../types";
 
 interface LightDetectBody {
   headers: HeadersDict

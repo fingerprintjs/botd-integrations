@@ -7,6 +7,7 @@ import {
   SEARCH_BOT_PROB_HEADER, SEARCH_BOT_STATUS_HEADER, SEARCH_BOT_TYPE_HEADER,
   VM_PROB_HEADER, VM_STATUS_HEADER, VM_TYPE_HEADER, GET, ERROR_DESCRIPTION_HEADER, Status,
 } from '../constants'
+import {DetectResultError, DetectResultItem} from "../types";
 
 export function transferBotdHeaders(src: Response, dst: Request): void {
   const status = src.headers.get(REQUEST_STATUS_HEADER) || ''
