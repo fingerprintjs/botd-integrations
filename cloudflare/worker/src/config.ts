@@ -1,4 +1,4 @@
-import { getPathFromURL, removeLastSlash } from './utils'
+import { getPathFromURL, trimURL } from './utils'
 import { BOTD_DEFAULT_URL } from './constants'
 
 export default interface Config {
@@ -19,16 +19,10 @@ export async function getConfig(request: Request): Promise<Config> {
     throw Error("Can`t find botd token in KV storage")
 
   let botdURL = await getFromConfig("botd_url")
-  if (botdURL == null)
-    botdURL = BOTD_DEFAULT_URL
-  else
-    botdURL = removeLastSlash(botdURL)
+  botdURL = (botdURL == null) ? BOTD_DEFAULT_URL : trimURL(botdURL)
 
   let backendURL = await getFromConfig("botd_app")
-  if (backendURL != null)
-    backendURL = removeLastSlash(backendURL) + getPathFromURL(request.url)
-  else
-    backendURL = request.url
+  backendURL = (backendURL == null) ? request.url : trimURL(backendURL) + getPathFromURL(request.url)
 
   console.log(`[getConfig] Config - Botd URL: ${botdURL}, App URL: ${backendURL}, Token: ${token}`)
 

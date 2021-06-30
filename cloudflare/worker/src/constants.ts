@@ -31,6 +31,14 @@ export const VM_STATUS_HEADER = "botd-vm-status";
 export const VM_PROB_HEADER = "botd-vm-prob";
 export const VM_TYPE_HEADER = "botd-vm-type";
 
+export const RESULT_HEADERS = [REQUEST_ID_HEADER, REQUEST_STATUS_HEADER, AUTO_TOOL_STATUS_HEADER, AUTO_TOOL_PROB_HEADER,
+  AUTO_TOOL_TYPE_HEADER, VM_STATUS_HEADER, VM_PROB_HEADER, VM_TYPE_HEADER, SEARCH_BOT_STATUS_HEADER,
+  SEARCH_BOT_PROB_HEADER, SEARCH_BOT_TYPE_HEADER, BROWSER_SPOOFING_STATUS_HEADER, BROWSER_SPOOFING_PROB_HEADER,
+  BROWSER_SPOOFING_TYPE_HEADER]
+
+export const LIGHT_RESULT_HEADERS = [REQUEST_ID_HEADER, REQUEST_STATUS_HEADER, AUTO_TOOL_STATUS_HEADER,
+  AUTO_TOOL_PROB_HEADER, AUTO_TOOL_TYPE_HEADER]
+
 export const SEC_FETCH_DEST_HEADER = "sec-fetch-dest";
 export const STATIC_SEC_FETCH_DEST = ["font", "script", "image", "style", "video", "manifest", "object"];  // TODO: add all static types
 export const STATIC_PATH_ENDINGS = [".css", ".js", ".jpg", ".png", ".svg", ".jpeg", ".woff2"]; // TODO: add all static types

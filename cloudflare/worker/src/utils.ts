@@ -10,17 +10,6 @@ import {
 
 export type HeadersDict = Record<string, unknown>
 
-export interface DetectResultItem {
-  status: string
-  prob: number
-  type: string
-}
-
-export interface DetectResultError {
-  status: Status.ERROR
-  error: string
-}
-
 export function changeURL(newURL: string, request: Request): Request {
   return new Request(newURL, new Request(request))
 }
@@ -45,9 +34,9 @@ export function getHeadersDict(requestHeaders: Headers): HeadersDict {
   return headersDict
 }
 
-export function removeLastSlash(url: string ): string {
-  if (url.endsWith('/'))
-    return url.slice(0, -1)
+export function trimURL(url: string ): string {
+  while (url.endsWith('/'))
+    url = url.slice(0, -1)
   return url
 }
 
