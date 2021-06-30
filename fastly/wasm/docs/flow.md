@@ -1,5 +1,5 @@
 ## Example app
-Web application that we’re going to protect with Fastly - http://botd-integration-demo.fpjs.sh (origin).
+Web application that we’re going to protect with Fastly - http://botd-example-app.fpjs.sh (origin).
 
 ## Flow with Fastly integration enabled
 1. End-user loads an example app from https://fpjs-wasm.edgecompute.app/.
