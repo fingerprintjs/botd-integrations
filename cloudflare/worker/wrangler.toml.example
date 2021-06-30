@@ -1,7 +1,16 @@
 name = ""
-type = ""
+type = "javascript"
 
 account_id = ""
 workers_dev = true
 route = ""
 zone_id = ""
+
+kv_namespaces = [
+    { binding = "CONFIG", preview_id = "", id = "" }
+]
+
+[build]
+command = "npm install && npm run build"
+[build.upload]
+format = "service-worker"

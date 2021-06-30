@@ -59,7 +59,7 @@ export function isRequestStatic(request: Request): boolean {
     return false;
   }
   // sec-fetch-dest header doesn't exist => check by path ending
-  for (const s in STATIC_PATH_ENDINGS){
+  for (const s of STATIC_PATH_ENDINGS){
     if (request.url.endsWith(s))
       return true;
   }
