@@ -1,7 +1,7 @@
 import {getHeadersDict, getPathFromURL, getRequestID, HeadersDict} from '../utils'
 import Config from '../config'
 import {
-  BOTD_LIGHT_PATH, ERROR_DESCRIPTION_HEADER, LIGHT_RESULT_HEADERS, POST,
+  BOTD_LIGHT_PATH, COOKIE_NAME, ERROR_DESCRIPTION_HEADER, LIGHT_RESULT_HEADERS, POST,
   REQUEST_ID_HEADER, REQUEST_STATUS_HEADER, RESULT_HEADERS, SET_COOKIE_HEADER, Status,
 } from '../constants'
 
@@ -25,14 +25,15 @@ export function transferLightHeaders(src: Response, dst: Request): void {
     console.error(`[transferLightHeaders] Handled error from Botd backend: ${error}`)
 
   } else if (status === Status.PROCESSED) {
-    for (const name in LIGHT_RESULT_HEADERS) {
+    for (const name of LIGHT_RESULT_HEADERS) {
       const value = s.get(name) || ''
       d.append(name, value)
       console.log(`[transferLightHeaders] Header: ${name}, Value: ${value}`)
     }
 
     const requestId = s.get(REQUEST_ID_HEADER) || ''
-    d.append(SET_COOKIE_HEADER, requestId)
+    const cookie = `${COOKIE_NAME}=${requestId}`
+    d.append(SET_COOKIE_HEADER, cookie)
 
   } else
     throw Error(`Unknown status from bot detection server: ${status}`)

@@ -17,7 +17,7 @@ export function transferBotdHeaders(src: Response, dst: Request): void {
     console.error(`[transferBotdHeaders] Handled error from Botd backend: ${error}`)
 
   } else if (status === Status.PROCESSED) {
-    for (const name in RESULT_HEADERS) {
+    for (const name of RESULT_HEADERS) {
       const value = s.get(name) || ''
       d.append(name, value)
       console.log(`[transferBotdHeaders] Header: ${name}, Value: ${value}`)
