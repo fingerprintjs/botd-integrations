@@ -1,10 +1,9 @@
-import { getHeadersDict, getPathFromURL, getRequestID } from '../utils'
+import {getHeadersDict, getPathFromURL, getRequestID, HeadersDict} from '../utils'
 import Config from '../config'
-import { AUTO_TOOL_PROB_HEADER, AUTO_TOOL_STATUS_HEADER, AUTO_TOOL_TYPE_HEADER,
-  BOTD_LIGHT_PATH, ERROR_DESCRIPTION_HEADER, POST,
-  REQUEST_ID_HEADER, REQUEST_STATUS_HEADER, SET_COOKIE_HEADER, Status,
+import {
+  BOTD_LIGHT_PATH, ERROR_DESCRIPTION_HEADER, LIGHT_RESULT_HEADERS, POST,
+  REQUEST_ID_HEADER, REQUEST_STATUS_HEADER, RESULT_HEADERS, SET_COOKIE_HEADER, Status,
 } from '../constants'
-import {HeadersDict} from "../types";
 
 interface LightDetectBody {
   headers: HeadersDict
@@ -14,28 +13,27 @@ interface LightDetectBody {
 }
 
 export function transferLightHeaders(src: Response, dst: Request): void {
-  const status = src.headers.get(REQUEST_STATUS_HEADER) || ''
-  dst.headers.append(REQUEST_STATUS_HEADER, status)
+  const s = src.headers
+  const d = dst.headers
+
+  const status = s.get(REQUEST_STATUS_HEADER) || ''
 
   if (status === Status.ERROR) {
-    const error = src.headers.get(ERROR_DESCRIPTION_HEADER) || ''
-    dst.headers.append(ERROR_DESCRIPTION_HEADER, error)
-
+    d.append(REQUEST_STATUS_HEADER, status)
+    const error = s.get(ERROR_DESCRIPTION_HEADER) || ''
+    d.append(ERROR_DESCRIPTION_HEADER, error)
     console.error(`[transferLightHeaders] Handled error from Botd backend: ${error}`)
 
   } else if (status === Status.PROCESSED) {
-    const requestID = src.headers.get(REQUEST_ID_HEADER) || ''
-    const autoToolStatus =  src.headers.get(AUTO_TOOL_STATUS_HEADER) || ''
-    const autoToolProb = src.headers.get(AUTO_TOOL_PROB_HEADER) || ''
-    const autoToolType = src.headers.get(AUTO_TOOL_TYPE_HEADER) || ''
+    for (const name in LIGHT_RESULT_HEADERS) {
+      const value = s.get(name) || ''
+      d.append(name, value)
+      console.log(`[transferLightHeaders] Header: ${name}, Value: ${value}`)
+    }
 
-    dst.headers.append(SET_COOKIE_HEADER, requestID)
-    dst.headers.append(AUTO_TOOL_STATUS_HEADER, autoToolStatus)
-    dst.headers.append(AUTO_TOOL_PROB_HEADER, autoToolProb)
-    dst.headers.append(AUTO_TOOL_TYPE_HEADER, autoToolType)
+    const requestId = s.get(REQUEST_ID_HEADER) || ''
+    d.append(SET_COOKIE_HEADER, requestId)
 
-    console.log(`[transferLightHeaders] Light Detect Result - Status: ${status}, Request ID: ${requestID}`)
-    console.log(`[transferLightHeaders] Automation Tool - Status: ${autoToolStatus}, Probability: ${autoToolProb}, Type: ${autoToolType}`)
   } else
     throw Error(`Unknown status from bot detection server: ${status}`)
 }

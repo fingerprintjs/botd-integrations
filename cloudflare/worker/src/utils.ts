@@ -7,7 +7,8 @@ import {
   STATIC_PATH_ENDINGS,
   STATIC_SEC_FETCH_DEST, Status,
 } from './constants'
-import {HeadersDict} from "./types";
+
+export type HeadersDict = Record<string, unknown>
 
 export function changeURL(newURL: string, request: Request): Request {
   return new Request(newURL, new Request(request))
