@@ -19,7 +19,9 @@ wrangler kv:namespace create "CONFIG" --preview
    
 5. Create records in KV storage:
 `botd_token` - authorization token, `botd_app` - origin backend url
-   
-6. Run `wrangler dev` for local testing
+ 
+6. Run `npm install`
+  
+7. Run `wrangler dev` for local testing
 
-7. Run `wrangler publish` to deploy worker
+8. Run `wrangler publish` to deploy worker
