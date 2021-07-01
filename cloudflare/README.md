@@ -6,6 +6,8 @@
 
 2. Go to `Workers` and follow `set up the Wrangler CLI`
 
+*Note: If `wrangler login` get stuck in your console, try [this](https://github.com/cloudflare/wrangler/issues/1703#issuecomment-773797265) method.*
+
 3. Create KV storage:
 ```
 wrangler kv:namespace create "CONFIG"
