@@ -13,7 +13,7 @@ wrangler kv:namespace create "CONFIG" --preview
 ```
 
 4. Rename `wrangler.toml.example` into `wrangler.toml` and fill parameters `name`, `account_id` and
-`preview_id` and `id` in `kv_namespaces`
+`preview_id`, `id` in `kv_namespaces`
    
 5. Create records in KV storage:
 `botd_token` - authorization token, `botd_app` - origin backend url
