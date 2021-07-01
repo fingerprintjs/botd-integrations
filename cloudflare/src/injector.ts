@@ -16,8 +16,7 @@ export function injectScript(html: string, config: Config): string {
     <script src="https://cdn.jsdelivr.net/npm/@fpjs-incubator/botd-agent@0/dist/botd.min.js" onload="getResults()"></script>`
 
   const match = /(<head.*>)/.exec(html)
-  if (match === null)
-    throw Error("Can`t find header tag in request body")
+  if (match === null) throw Error('Can`t find header tag in request body')
 
-  return html.substr(0, match.index) + script + html.substr(match.index);
+  return html.substr(0, match.index) + script + html.substr(match.index)
 }

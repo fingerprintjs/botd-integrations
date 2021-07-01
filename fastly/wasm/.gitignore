@@ -3,3 +3,4 @@
 **/*.sh
 /bin
 /pkg
+node_modules

@@ -1,7 +1,12 @@
 import { getRequestID } from '../utils'
 import Config from '../config'
 import {
-  BOTD_RESULT_PATH, REQUEST_STATUS_HEADER, GET, ERROR_DESCRIPTION_HEADER, Status, RESULT_HEADERS,
+  BOTD_RESULT_PATH,
+  REQUEST_STATUS_HEADER,
+  GET,
+  ERROR_DESCRIPTION_HEADER,
+  Status,
+  RESULT_HEADERS,
 } from '../constants'
 
 export function transferBotdHeaders(src: Response, dst: Request): void {
@@ -10,21 +15,27 @@ export function transferBotdHeaders(src: Response, dst: Request): void {
 
   const status = s.get(REQUEST_STATUS_HEADER) || ''
 
-  if (status === Status.ERROR) {
-    const error = s.get(ERROR_DESCRIPTION_HEADER) || ''
-    d.append(REQUEST_STATUS_HEADER, status)
-    d.append(ERROR_DESCRIPTION_HEADER, error)
-    console.error(`[transferBotdHeaders] Handled error from Botd backend: ${error}`)
-
-  } else if (status === Status.PROCESSED) {
-    for (const name of RESULT_HEADERS) {
-      const value = s.get(name) || ''
-      d.append(name, value)
-      console.log(`[transferBotdHeaders] Header: ${name}, Value: ${value}`)
+  switch (status) {
+    case Status.ERROR: {
+      const error = s.get(ERROR_DESCRIPTION_HEADER) || ''
+      d.append(REQUEST_STATUS_HEADER, status)
+      d.append(ERROR_DESCRIPTION_HEADER, error)
+      console.error(`[transferBotdHeaders] Handled error from Botd backend: ${error}`)
+      break
     }
 
-  } else
-    throw Error(`Unknown status from bot detection server: ${status}`)
+    case Status.PROCESSED: {
+      for (const name of RESULT_HEADERS) {
+        const value = s.get(name) || ''
+        d.append(name, value)
+        console.log(`[transferBotdHeaders] Header: ${name}, Value: ${value}`)
+      }
+      break
+    }
+
+    default:
+      throw Error(`Unknown status from bot detection server: ${status}`)
+  }
 }
 
 export async function makeBotDetect(request: Request, config: Config): Promise<Response> {

@@ -10,27 +10,27 @@ export default async function handleAll(request: Request): Promise<Response> {
 
     if (isRequestStatic(request)) {
       if (isRequestFavicon(request)) {
-        console.log("[handleAll] Request favicon, starting light bot detection")
+        console.log('[handleAll] Request favicon, starting light bot detection')
 
         const lightDetectResponse = await makeLightDetect(request, config)
-        request = changeURL(config.backendURL, request)
+        request = changeURL(config.originURL, request)
         transferLightHeaders(lightDetectResponse, request)
 
         return await fetch(request)
       }
-      console.log("[handleAll] Request static data, skipping bot detection")
+      console.log('[handleAll] Request static data, skipping bot detection')
 
-      const actualRequest = new Request(config.backendURL, new Request(request))
+      const actualRequest = new Request(config.originURL, new Request(request))
       return await fetch(actualRequest)
     }
 
     const botDetectResponse = await makeBotDetect(request, config)
-    request = changeURL(config.backendURL, request)
+    request = changeURL(config.originURL, request)
     transferBotdHeaders(botDetectResponse, request)
 
     return await fetch(request)
   } catch (e) {
-    console.error(`[handleAll] Error handled: ${ e.message }`)
+    console.error(`[handleAll] Error handled: ${e.message}`)
 
     setErrorHeaders(request, e)
     return await fetch(request)

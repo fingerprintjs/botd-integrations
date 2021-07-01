@@ -10,7 +10,7 @@ export default async function handleInitRequest(request: Request): Promise<Respo
     const config = await getConfig(request)
     const lightDetectResponse = await makeLightDetect(request, config)
 
-    request = changeURL(config.backendURL, request)
+    request = changeURL(config.originURL, request)
     transferLightHeaders(lightDetectResponse, request)
 
     const response = await fetch(request)
@@ -20,9 +20,8 @@ export default async function handleInitRequest(request: Request): Promise<Respo
     const injected = injectScript(html, config)
 
     return new Response(injected, response)
-
   } catch (e) {
-    console.error(`[handleInitRequest] Error handled: ${ e.message }`)
+    console.error(`[handleInitRequest] Error handled: ${e.message}`)
 
     setErrorHeaders(request, e)
     return await fetch(request)
