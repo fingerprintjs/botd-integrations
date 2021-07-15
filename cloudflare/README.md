@@ -1,6 +1,7 @@
 # Cloudflare Botd integration
 
 ## Sample integration
+![image](https://user-images.githubusercontent.com/10922372/125807555-97e8b4a3-63e7-4a62-9784-e406044702f4.png)
 You can try running sample Cloudflare integration at [https://botd.fingerprintjs.workers.dev/](https://botd.fingerprintjs.workers.dev/).
 
 Login: `human`, Password: `iamnotbot`
