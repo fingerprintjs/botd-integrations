@@ -1,6 +1,10 @@
-## Cloudflare Botd integration
+# Cloudflare Botd integration
 
-### Setting up the integration
+## Sample integration
+You can try running sample Cloudflare integration at [https://botd.fingerprintjs.workers.dev/](https://botd.fingerprintjs.workers.dev/).
+
+Login: `human`, Password: `iamnotbot`
+## Setting up the integration
 
 1. Create an account in [Cloudflare](https://www.cloudflare.com/).
 
