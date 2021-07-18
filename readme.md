@@ -12,6 +12,8 @@ Web application that we’re going to protect with Fastly - http://botd-example-
 Middleware examples: Cloudflare worker, Fastly Compute@Edge function, Amazon Lambda@Edge.
 
 ### Flow with integration enabled
+![botd](https://user-images.githubusercontent.com/10922372/126072756-aa246534-2f1c-41d0-b10c-8dc8ea057025.png)
+
 1. End-user loads an example app.
 
 2. Middleware intercepts first two requests
@@ -36,7 +38,7 @@ Middleware examples: Cloudflare worker, Fastly Compute@Edge function, Amazon Lam
 
 8. Response from origin returns to client's browser.
 
-9. If the request retrieves static content (e.g. images, fonts) except favicon, point 7 won't be done.
+*Note: If the request retrieves static content (e.g. images, fonts) except favicon, point 7 won't be done.*
 
 Checking the ***Emulate bot*** checkbox will replace `User-Agent` to `Headless Chrome`.
 It will force the bot branch of the flow.
