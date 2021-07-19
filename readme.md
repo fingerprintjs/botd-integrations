@@ -53,17 +53,17 @@ You can find more information about botd headers [here](https://github.com/finge
 Header with request id. Example:
 `botd-request-id: 6080277c12b178b86f1f967d`.
 #### botd-request-status
-Possible values of botd-request-status header: `'processed'`, `'inProgress'`, `'error'`
+Possible values of botd-request-status header: `'processed'`, `'inProgress'`, `'error'`.
 #### botd-automation-tool-status, botd-browser-spoofing-status, botd-search-bot-status, botd-vm-status
-Possible values of status header: `'processed'`, `'error'`, `'notEnoughData'`
+Possible values of status header: `'processed'`, `'error'`, `'notEnoughData'`.
 #### botd-automation-tool-prob, botd-browser-spoofing-prob, botd-search-bot-prob, botd-vm-prob
-Headers are presented if corresponded `status` is `processed`. The value is float number in range `0.0` to `1.0`
+Headers are presented if corresponded `status` is `processed`. The value is float number in range `0.0` to `1.0`.
 #### botd-automation-tool-type
-**[OPTIONAL]** Possible values: `'phantomjs'`, `'headlessChrome'` and so on
+**[OPTIONAL]** Possible values: `'phantomjs'`, `'headlessChrome'` and so on.
 #### botd-search-bot-type
-**[OPTIONAL]** Possible values: `'google'`, `'yandex'` and so on
+**[OPTIONAL]** Possible values: `'google'`, `'yandex'` and so on.
 #### botd-vm-type
-**[OPTIONAL]** Possible values: `'vmware'`, `'parallels'` and so on
+**[OPTIONAL]** Possible values: `'vmware'`, `'parallels'` and so on.
 ### Headers example:
 ```
 botd-request-id: 6080277c12b178b86f1f967d
