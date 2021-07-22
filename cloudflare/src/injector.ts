@@ -13,7 +13,7 @@ export function injectScript(html: string, config: Config): string {
             const result = await botd.detect("Cloudflare")
         }
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/@fpjs-incubator/botd-agent@0.1.14/dist/botd.min.js" onload="getResults()"></script>`
+    <script src="https://cdn.jsdelivr.net/npm/@fpjs-incubator/botd-agent@0/dist/botd.min.js" onload="getResults()"></script>`
 
   const match = /(<head.*>)/.exec(html)
   if (match === null) throw Error('Can`t find header tag in request body')
