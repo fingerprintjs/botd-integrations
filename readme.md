@@ -2,16 +2,20 @@
 <img width="1280" alt="bot-detection cloud integration-2" src="https://user-images.githubusercontent.com/27387/122214619-f97ab080-ceb2-11eb-8cca-59cdcab33e8b.png">
 
 
-## FingerprintJS Botd integrations with cloud providers.
+## FingerprintJS [Botd](https://github.com/fingerprintjs/botd) integrations with cloud platforms.
 
 ## Flow with integration enabled
 
 ### Example app
-Web application that we’re going to protect with Fastly - http://botd-example-app.fpjs.sh (origin).
+Web application that we’re going to protect - http://botd-example-app.fpjs.sh. We will be referring to this app as the **`origin`**.
 
-Middleware examples: Cloudflare worker, Fastly Compute@Edge function, Amazon Lambda@Edge.
+We'll protect it by adding a CDN layer on top of it, provided by Cloudflare workers, Fastly Compute@Edge, or Amazon Lambda@Edge.
+
+Every CDN example will run middleware functions to intercept requests and responses. These middleware functions are fully open source and are included in this repository.
 
 ### Flow with integration enabled
+![botd](https://user-images.githubusercontent.com/10922372/126072756-aa246534-2f1c-41d0-b10c-8dc8ea057025.png)
+
 1. End-user loads an example app.
 
 2. Middleware intercepts first two requests
@@ -36,30 +40,30 @@ Middleware examples: Cloudflare worker, Fastly Compute@Edge function, Amazon Lam
 
 8. Response from origin returns to client's browser.
 
-9. If the request retrieves static content (e.g. images, fonts) except favicon, point 7 won't be done.
+*Note: If the request retrieves static content (e.g. images, fonts) except favicon, point 7 won't be done.*
 
 Checking the ***Emulate bot*** checkbox will replace `User-Agent` to `Headless Chrome`.
 It will force the bot branch of the flow.
 
-### Origin Bot Detection Headers
+### Bot Detection Headers sent to `Origin`
 
-More details about data in the headers you can find [here](https://github.com/fingerprintjs/botd/blob/main/docs/server_api.md).
+You can find more information about botd headers [here](https://github.com/fingerprintjs/botd/blob/main/docs/server_api.md).
 
 #### botd-request-id
 Header with request id. Example:
-`botd-request-id: 6080277c12b178b86f1f967d`
+`botd-request-id: 6080277c12b178b86f1f967d`.
 #### botd-request-status
-Possible values of botd-request-status header = ["processed" | "inProgress" | "error"]
+Possible values of botd-request-status header: `'processed'`, `'inProgress'`, `'error'`.
 #### botd-automation-tool-status, botd-browser-spoofing-status, botd-search-bot-status, botd-vm-status
-Possible values of status header = ["processed" | "error" | "notEnoughData"]
+Possible values of status header: `'processed'`, `'error'`, `'notEnoughData'`.
 #### botd-automation-tool-prob, botd-browser-spoofing-prob, botd-search-bot-prob, botd-vm-prob
-Headers are presented if `status` is `processed`. Possible values = [0.0 .. 1.0]
+Headers are presented if corresponded `status` is `processed`. The value is float number in range `0.0` to `1.0`.
 #### botd-automation-tool-type
-**[OPTIONAL]** Possible values = ["phantomjs", "headlessChrome", ...]
+**[OPTIONAL]** Possible values: `'phantomjs'`, `'headlessChrome'` and so on.
 #### botd-search-bot-type
-**[OPTIONAL]** Possible values = ["google", "yandex" ...]
+**[OPTIONAL]** Possible values: `'google'`, `'yandex'` and so on.
 #### botd-vm-type
-**[OPTIONAL]** Possible values = ["vmware", "parallels" ...]
+**[OPTIONAL]** Possible values: `'vmware'`, `'parallels'` and so on.
 ### Headers example:
 ```
 botd-request-id: 6080277c12b178b86f1f967d
