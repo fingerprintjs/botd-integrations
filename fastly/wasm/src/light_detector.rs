@@ -66,6 +66,7 @@ fn collect_and_send(req: &Request, config: &Config) -> Response {
 
     let mut light_request = Request::post(config.botd_url.to_owned());
     light_request.set_path(BOTD_LIGHT_PATH);
+    light_request.set_query_str("header");
     light_request.set_body_str(json.dump().as_str());
     light_request.set_header("Auth-Token", &config.botd_token);
 

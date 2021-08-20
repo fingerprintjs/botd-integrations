@@ -65,7 +65,7 @@ export async function makeLightDetect(request: Request, config: Config): Promise
       body: JSON.stringify(body),
       headers: { 'Auth-Token': config.token },
     }
-    const url = config.botdURL + BOTD_LIGHT_PATH
+    const url = `${config.botdURL}${BOTD_LIGHT_PATH}?header`
     const lightRequest = new Request(url, lightRequestInit)
     return await fetch(lightRequest)
   } catch (e) {
