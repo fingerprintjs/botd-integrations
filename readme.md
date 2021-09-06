@@ -16,7 +16,7 @@ Every CDN example will run middleware functions to intercept requests and respon
 ### Flow with integration enabled
 ![botd](https://user-images.githubusercontent.com/10922372/126072756-aa246534-2f1c-41d0-b10c-8dc8ea057025.png)
 
-1. End-user loads an example app.
+1. End-user loads an example app provided by the integrations ([app powered by Cloudflare](https://botd.fingerprintjs.workers.dev/) or app using [Compute@Edge by Fastly](https://botd-fingerprintjs.edgecompute.app/)).
 
 2. Middleware intercepts first two requests
    (for HTML content of the page and for favicon) and does `light bot detection`
@@ -29,16 +29,16 @@ Every CDN example will run middleware functions to intercept requests and respon
 4. Middleware receives response from origin. If it's a request for HTML content it will inject
    [Botd script](https://github.com/fingerprintjs/botd) into the page.
 
-5. Response from origin returns to client's browser with cookie `botd-request-id`.
+5. Response from origin is returned to end-user's browser with cookie `botd-request-id`. `requestID` value can be used to retrieve the bot detection results later.
 
 6. The end-user fills the form and submits it to the `POST /login` endpoint
    (same logic can be applied for next requests of origin app).
 
 7. Middleware intercepts the request and retrieves results of `full bot detection` from [Server Botd API](https://github.com/fingerprintjs/botd/blob/main/docs/server_api.md)
-   by the botd request identifier (available in a cookie). Then, it sets the result into headers of the request and
+   by the botd's `requestID` identifier (available in a `botd-request-id` cookie). Then, it sets the result into headers of the request and
    sends it to origin.
 
-8. Response from origin returns to client's browser.
+8. Response from origin is returned to end-user's browser.
 
 *Note: If the request retrieves static content (e.g. images, fonts) except favicon, point 7 won't be done.*
 
@@ -50,7 +50,7 @@ It will force the bot branch of the flow.
 You can find more information about botd headers [here](https://github.com/fingerprintjs/botd/blob/main/docs/server_api.md).
 
 #### botd-request-id
-Header with request id. Example:
+Header with request identifier. Example:
 `botd-request-id: 6080277c12b178b86f1f967d`.
 #### botd-request-status
 Possible values of botd-request-status header: `'processed'`, `'inProgress'`, `'error'`.
