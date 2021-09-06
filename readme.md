@@ -1,16 +1,16 @@
 <img width="960" alt="bot-detection cloud integration-2" src="https://user-images.githubusercontent.com/27387/122214619-f97ab080-ceb2-11eb-8cca-59cdcab33e8b.png">
 
 
-## FingerprintJS [Botd](https://github.com/fingerprintjs/botd) integrations with cloud platforms.
+## This project contains code and docs for FingerprintJS [new bot detection product](https://github.com/fingerprintjs/botd) cloud integrations.
 
-## Flow with integration enabled
+### Quick links: [CloudFlare](https://github.com/fingerprintjs/botd-integrations/blob/main/cloudflare/README.md), [Fastly](https://github.com/fingerprintjs/botd-integrations/blob/main/fastly/wasm/README.md), (AWS is in progress).
 
 ### Example app
-Web application that we’re going to protect - http://botd-example-app.fpjs.sh. We will be referring to this app as the **`origin`**.
+Web application that we’re going to protect from bots - http://botd-example-app.fpjs.sh. We will be referring to this app as the **`origin`**.
 
-We'll protect it by adding a CDN layer on top of it, provided by Cloudflare workers, Fastly Compute@Edge, or Amazon Lambda@Edge.
+We'll protect it by adding a CDN on top of it, provided by Cloudflare workers, Fastly Compute@Edge, or Amazon Lambda@Edge.
 
-Every CDN example will run middleware functions to intercept requests and responses. These middleware functions are fully open source and are included in this repository.
+Every CDN example will run a middleware function to intercept requests and responses. These middleware functions are fully open source and their source code is included in this repository.
 
 ### Flow with integration enabled
 ![botd](https://user-images.githubusercontent.com/10922372/126072756-aa246534-2f1c-41d0-b10c-8dc8ea057025.png)
