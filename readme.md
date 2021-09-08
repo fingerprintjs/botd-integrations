@@ -1,5 +1,6 @@
-## This project contains code and docs for FingerprintJS [new bot detection product](https://github.com/fingerprintjs/botd) cloud integrations.
+## This project contains cloud integrations code and docs for [BotD](https://github.com/fingerprintjs/botd) - FingerprintJS new bot detection product that allows to detect bots in JavaScript easily.
 <img width="960" alt="bot-detection cloud integration-2" src="https://user-images.githubusercontent.com/27387/122214619-f97ab080-ceb2-11eb-8cca-59cdcab33e8b.png">
+
 ### Quick links: [CloudFlare](https://github.com/fingerprintjs/botd-integrations/blob/main/cloudflare/README.md), [Fastly](https://github.com/fingerprintjs/botd-integrations/blob/main/fastly/wasm/README.md), (AWS is in progress).
 
 ### Example app
