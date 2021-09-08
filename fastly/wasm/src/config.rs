@@ -1,43 +1,74 @@
+use std::fmt;
 use fastly::{Dictionary, Error};
-use crate::constants::{BOTD_URL, ENV_DEFAULT};
+use crate::utils::remove_trailing_slash;
+
+const ENV_DEFAULT: &str = "Middleware";
+const BOTD_URL: &str = "https://botd.fpapi.io/";
+
+const CONFIG_DICT_NAME: &str = "botd_config";
+const CONFIG_DISABLE: &str = "disable";
+const CONFIG_ENV: &str = "env";
+const CONFIG_TOKEN: &str = "token";
+const CONFIG_BOTD_URL: &str = "botd_url";
+const CONFIG_APP_URL: &str = "origin_url";
+
+const TRUE: &str = "true";
+const FALSE: &str = "false";
 
 pub struct Config {
     pub env: String,
-    pub botd_token: String,
+    pub token: String,
     pub botd_url: String,
-    pub app_backend_url: String,
+    pub origin_url: String,
+    pub disabled: bool
 }
 
-fn get_variable(name: &str, dictionary: &Dictionary) -> String {
-    let option = dictionary.get(name);
-    if option.is_none() {
-        let msg = name.to_owned() + " cannot be extracted from config";
-        log::error!("{}", msg.to_owned());
-        panic!(msg)
+impl Config {
+    pub fn new() -> Result<Config, Error> {
+        let dictionary = Dictionary::open(CONFIG_DICT_NAME);
+
+        let env = dictionary.get(CONFIG_ENV).unwrap_or(String::from(ENV_DEFAULT));
+        let mut botd_url = dictionary.get(CONFIG_BOTD_URL).unwrap_or(String::from(BOTD_URL));
+        let is_disabled_string = dictionary.get(CONFIG_DISABLE).unwrap_or(String::from(FALSE));
+        let disabled = is_disabled_string == TRUE;
+
+        let err_msg = format!("[Compute@Edge:BotdError] Can't get botd token from {} dictionary by key {}", CONFIG_DICT_NAME, CONFIG_TOKEN);
+        let token = match dictionary.get(CONFIG_TOKEN).ok_or(err_msg) {
+            Ok(t) => t,
+            Err(e) => return Err(Error::msg(e))
+        };
+
+        let err_msg = format!("[Compute@Edge:BotdError] Can't get application backend URL from {} dictionary by key {}", CONFIG_DICT_NAME, CONFIG_APP_URL);
+        let mut origin_url = match dictionary.get(CONFIG_APP_URL).ok_or(err_msg) {
+            Ok(t) => t,
+            Err(e) => return Err(Error::msg(e))
+        };
+        remove_trailing_slash(&mut botd_url);
+        remove_trailing_slash(&mut origin_url);
+
+        Ok(Config{
+            env,
+            token,
+            botd_url,
+            origin_url,
+            disabled
+        })
     }
-    return option.unwrap();
 }
 
-fn remove_last_slash(src: String) -> String {
-    if src.chars().last() == Some('/') {
-        return String::from(&src[..src.len() - 1]);
+impl fmt::Display for Config {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(f, "Botd data from Compute@Edge dictionary botd_config:\n\
+            - Environment: {},\n\
+            - Token: {},\n\
+            - App Backend: {},\n\
+            - Botd Backend URL: {},\n\
+            - Is Botd disabled: {}",
+                     self.env,
+                     self.token,
+                     self.origin_url,
+                     self.botd_url,
+                     self.disabled
+            )
     }
-    return src
-}
-
-fn get_variable_or_default(name: &str, default: &str, dictionary: &Dictionary) -> String {
-    let option = dictionary.get(name);
-    if option.is_none() {
-        return default.to_string()
-    }
-    return option.unwrap();
-}
-
-pub fn read_config() -> Result<Config, Error> {
-    let dictionary = Dictionary::open("config");
-    let env = get_variable_or_default("env", ENV_DEFAULT, &dictionary);
-    let botd_token = get_variable("botd_token", &dictionary);
-    let botd_url = remove_last_slash(get_variable_or_default("botd_url", BOTD_URL, &dictionary));
-    let app_backend_url = remove_last_slash(get_variable("app_backend_url", &dictionary));
-    return Result::Ok(Config{env, botd_token, botd_url, app_backend_url})
 }
