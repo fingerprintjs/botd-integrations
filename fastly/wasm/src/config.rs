@@ -1,5 +1,5 @@
 use std::fmt;
-use fastly::{Dictionary, Error, Backend};
+use fastly::{Dictionary};
 
 /// This should match the name of your storage backend. See the the `Hosts` section of
 /// the Fastly WASM service UI for more information.

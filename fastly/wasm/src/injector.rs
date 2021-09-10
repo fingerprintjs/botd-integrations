@@ -46,5 +46,5 @@ pub fn inject_script(html: &String, config: &Config) -> Result<String, InjectorE
         }
         Err(InjectorError::WrongHTML(String::from("Can't find head tag in response body.")))
     }
-    Err(InjectorError::RegexSyntax((format!("Can't create regex {}", re))))
+    Err(InjectorError::RegexSyntax(format!("Can't create regex {}", re)))
 }
