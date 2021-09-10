@@ -1,39 +1,26 @@
 use regex::Regex;
 use crate::config::Config;
-use crate::constants::BOTD_DEFAULT_PATH;
 
-fn get_script(token: String, endpoint: String) -> String {
-    const SCRIPT_BODY_BEGIN: &str = r#"
+pub fn inject_botd_script(html: Box<str>, config: &Config) -> String {
+    log::debug!("[inject_botd_script] Inject script with token: {}, endpoint: {}", config.token, config.botd_endpoint);
+    let script = format!("
     <script>
-        async function getResults() {
-            const botdPromise = Botd.load({
-            token: ""#;
-    const SCRIPT_BODY_MIDDLE: &str = r#"",
-            mode: "requestId",
-            endpoint: ""#;
-    const SCRIPT_BODY_END: &str = r#"",
-        })
+        async function getResults() {{
+            const botdPromise = Botd.load({{
+                token: \"{}\",
+                mode: \"requestId\",
+                endpoint: \"{}\",
+            }})
         const botd = await botdPromise
-        const result = await botd.detect("Fastly")
-        }
+        const result = await botd.detect()
+        }}
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/@fpjs-incubator/botd-agent@0/dist/botd.min.js" onload="getResults()"></script>
-    "#;
-    return format!("{}{}{}{}{}", SCRIPT_BODY_BEGIN, token, SCRIPT_BODY_MIDDLE, endpoint, SCRIPT_BODY_END)
-}
+    <script src=\"https://cdn.jsdelivr.net/npm/@fpjs-incubator/botd-agent@0/dist/botd.min.js\" onload=\"getResults()\"></script>
+    ", config.token, config.botd_endpoint);
 
-pub fn add_bot_detection_script(html: Box<str>, config: &Config) -> String {
     let mut injected_html = String::from(html);
+    let script_index = Regex::new(r"(<head.*>)").unwrap().find(&*injected_html).unwrap().end();
 
-    let endpoint = format!("{}{}", config.botd_url, BOTD_DEFAULT_PATH);
-    let script = get_script(config.botd_token.to_owned(), endpoint.to_owned());
-
-    log::debug!("[add_bot_detection_script] token: {}, endpoint: {}", config.botd_token, endpoint);
-
-    let head_regex = Regex::new(r"(<head.*>)").unwrap();
-    let script_index = head_regex.find(&*injected_html).unwrap().end();
-
-    injected_html.insert_str(script_index, &script);
-
-    return injected_html;
+    injected_html.insert_str(script_index, script.as_str());
+    injected_html
 }
