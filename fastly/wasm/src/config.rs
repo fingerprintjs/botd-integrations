@@ -1,57 +1,77 @@
 use std::fmt;
-use fastly::{Dictionary, Error};
-use crate::utils::remove_trailing_slash;
+use fastly::{Dictionary, Error, Backend};
 
-const ENV_DEFAULT: &str = "Middleware";
-const BOTD_URL: &str = "https://botd.fpapi.io/";
+/// This should match the name of your storage backend. See the the `Hosts` section of
+/// the Fastly WASM service UI for more information.
+pub const BOTD_BACKEND_NAME: &str = "Botd";
+pub const APP_BACKEND_NAME: &str = "Backend";
+
+const DEFAULT_LOG_ENDPOINT_NAME: &str = "Local";
+const DEFAULT_BOTD_URL: &str = "https://botd.fpapi.io/api/v1/";
 
 const CONFIG_DICT_NAME: &str = "botd_config";
 const CONFIG_DISABLE: &str = "disable";
-const CONFIG_ENV: &str = "env";
+const CONFIG_LOG_ENDPOINT_NAME: &str = "log_endpoint_name";
 const CONFIG_TOKEN: &str = "token";
 const CONFIG_BOTD_URL: &str = "botd_url";
-const CONFIG_APP_URL: &str = "origin_url";
-
-const TRUE: &str = "true";
-const FALSE: &str = "false";
+const CONFIG_APP_HOST: &str = "app_host";
+const CONFIG_BOTD_BACKEND_NAME: &str = "botd_backend_name";
+const CONFIG_APP_BACKEND_NAME: &str = "app_backend_name";
 
 pub struct Config {
-    pub env: String,
     pub token: String,
-    pub botd_url: String,
-    pub origin_url: String,
-    pub disabled: bool
+    pub log_endpoint_name: String,
+    // Needs for debug purpose, should be used only in injector
+    pub debug_botd_url: Option<String>,
+    // Needs for CORS
+    pub app_host: Option<String>,
+    pub botd_backend_name: String,
+    pub app_backend_name: String,
+}
+
+/// An error that occurred during creation botd config
+pub enum ConfigError {
+    /// Can't extract botd token.
+    NoToken(String),
+    /// Passed HTML string doesn't contain <head> tag
+    Disabled(String),
 }
 
 impl Config {
-    pub fn new() -> Result<Config, Error> {
+    pub fn new() -> Result<Self, ConfigError> {
         let dictionary = Dictionary::open(CONFIG_DICT_NAME);
 
-        let env = dictionary.get(CONFIG_ENV).unwrap_or(String::from(ENV_DEFAULT));
-        let mut botd_url = dictionary.get(CONFIG_BOTD_URL).unwrap_or(String::from(BOTD_URL));
-        let is_disabled_string = dictionary.get(CONFIG_DISABLE).unwrap_or(String::from(FALSE));
-        let disabled = is_disabled_string == TRUE;
-
-        let err_msg = format!("[Compute@Edge:BotdError] Can't get botd token from {} dictionary by key {}", CONFIG_DICT_NAME, CONFIG_TOKEN);
-        let token = match dictionary.get(CONFIG_TOKEN).ok_or(err_msg) {
-            Ok(t) => t,
-            Err(e) => return Err(Error::msg(e))
+        let token = match dictionary.get(CONFIG_TOKEN) {
+            Some(t) => t,
+            _ => {
+                let msg = format!("Can't get botd token from {} dictionary by key {}", CONFIG_DICT_NAME, CONFIG_TOKEN);
+                return Err(ConfigError::NoToken(msg))
+            }
         };
 
-        let err_msg = format!("[Compute@Edge:BotdError] Can't get application backend URL from {} dictionary by key {}", CONFIG_DICT_NAME, CONFIG_APP_URL);
-        let mut origin_url = match dictionary.get(CONFIG_APP_URL).ok_or(err_msg) {
-            Ok(t) => t,
-            Err(e) => return Err(Error::msg(e))
-        };
-        remove_trailing_slash(&mut botd_url);
-        remove_trailing_slash(&mut origin_url);
+        let debug_botd_url = dictionary.get(CONFIG_BOTD_URL);
+        let app_host = dictionary.get(CONFIG_APP_HOST);
+
+        let log_endpoint_name_default = || String::from(DEFAULT_LOG_ENDPOINT_NAME);
+        let log_endpoint_name = dictionary.get(CONFIG_LOG_ENDPOINT_NAME).unwrap_or_else(log_endpoint_name_default);
+
+        let botd_backend_name = String::from(BOTD_BACKEND_NAME);
+        let app_backend_name = String::from(APP_BACKEND_NAME);
+
+        if let Some(d) = dictionary.get(CONFIG_DISABLE) {
+            if d == true.to_string() {
+                let msg = String::from("Bot detection disabled");
+                return Err(ConfigError::Disabled(msg))
+            }
+        }
 
         Ok(Config{
-            env,
             token,
-            botd_url,
-            origin_url,
-            disabled
+            log_endpoint_name,
+            debug_botd_url,
+            app_host,
+            botd_backend_name,
+            app_backend_name
         })
     }
 }
@@ -64,11 +84,11 @@ impl fmt::Display for Config {
             - App Backend: {},\n\
             - Botd Backend URL: {},\n\
             - Is Botd disabled: {}",
-                     self.env,
-                     self.token,
-                     self.origin_url,
-                     self.botd_url,
-                     self.disabled
+                   self.log_endpoint_name,
+                   self.token,
+                   self.app_url,
+                   self.botd_url,
+                   self.disabled
             )
     }
 }

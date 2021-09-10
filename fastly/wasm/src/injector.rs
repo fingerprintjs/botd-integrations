@@ -1,26 +1,50 @@
+use std::fmt;
 use regex::Regex;
 use crate::config::Config;
 
-pub fn inject_botd_script(html: Box<str>, config: &Config) -> String {
-    log::debug!("[inject_botd_script] Inject script with token: {}, endpoint: {}", config.token, config.botd_endpoint);
+
+/// An error that occurred during injecting botd script
+pub enum InjectorError {
+    /// A regex syntax error.
+    RegexSyntax(String),
+    /// Passed HTML string doesn't contain <head> tag
+    WrongHTML(String),
+}
+
+impl fmt::Display for InjectorError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Debug::fmt(self, f)
+    }
+}
+
+pub fn inject_script(html: &String, config: &Config) -> Result<String, InjectorError> {
+    let debug_url_replacement = match config.debug_botd_url.to_owned() {
+        Some(e) => format!("endpoint: \"{}\",", e),
+        None => ""
+    };
+
+    log::debug!("[inject_script] Inject script with token: {}", config.token);
     let script = format!("
     <script>
         async function getResults() {{
-            const botdPromise = Botd.load({{
-                token: \"{}\",
-                mode: \"requestId\",
-                endpoint: \"{}\",
-            }})
-        const botd = await botdPromise
-        const result = await botd.detect()
+            const botdPromise = Botd.load({{ token: \"{}\", mode: \"requestId\", {}}})
+            const botd = await botdPromise
+            const result = await botd.detect()
         }}
     </script>
     <script src=\"https://cdn.jsdelivr.net/npm/@fpjs-incubator/botd-agent@0/dist/botd.min.js\" onload=\"getResults()\"></script>
-    ", config.token, config.botd_endpoint);
+    ", config.token, debug_url_replacement);
 
-    let mut injected_html = String::from(html);
-    let script_index = Regex::new(r"(<head.*>)").unwrap().find(&*injected_html).unwrap().end();
+    let mut result = html.to_owned();
 
-    injected_html.insert_str(script_index, script.as_str());
-    injected_html
+    let re = r"(<head.*>)";
+    if let Ok(r) = Regex::new(re) {
+        if let Some(m) = r.find(html) {
+            let i = m.end();
+            result.insert_str(i, script.as_str());
+            Ok(result)
+        }
+        Err(InjectorError::WrongHTML(String::from("Can't find head tag in response body.")))
+    }
+    Err(InjectorError::RegexSyntax((format!("Can't create regex {}", re))))
 }
