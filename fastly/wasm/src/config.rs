@@ -7,16 +7,12 @@ pub const BOTD_BACKEND_NAME: &str = "Botd";
 pub const APP_BACKEND_NAME: &str = "Backend";
 
 const DEFAULT_LOG_ENDPOINT_NAME: &str = "Local";
-const DEFAULT_BOTD_URL: &str = "https://botd.fpapi.io/api/v1/";
-
 const CONFIG_DICT_NAME: &str = "botd_config";
 const CONFIG_DISABLE: &str = "disable";
 const CONFIG_LOG_ENDPOINT_NAME: &str = "log_endpoint_name";
 const CONFIG_TOKEN: &str = "token";
 const CONFIG_BOTD_URL: &str = "botd_url";
 const CONFIG_APP_HOST: &str = "app_host";
-const CONFIG_BOTD_BACKEND_NAME: &str = "botd_backend_name";
-const CONFIG_APP_BACKEND_NAME: &str = "app_backend_name";
 
 pub struct Config {
     pub token: String,
@@ -32,9 +28,18 @@ pub struct Config {
 /// An error that occurred during creation botd config
 pub enum ConfigError {
     /// Can't extract botd token.
-    NoToken(String),
+    NoToken,
     /// Passed HTML string doesn't contain <head> tag
-    Disabled(String),
+    Disabled,
+}
+
+impl ToString for ConfigError {
+    fn to_string(&self) -> String {
+        return match self {
+            ConfigError::NoToken => format!("Can't get botd token from {} dictionary by key {}", CONFIG_DICT_NAME, CONFIG_TOKEN),
+            ConfigError::Disabled => String::from("Bot detection disabled")
+        }
+    }
 }
 
 impl Config {
@@ -44,8 +49,7 @@ impl Config {
         let token = match dictionary.get(CONFIG_TOKEN) {
             Some(t) => t,
             _ => {
-                let msg = format!("Can't get botd token from {} dictionary by key {}", CONFIG_DICT_NAME, CONFIG_TOKEN);
-                return Err(ConfigError::NoToken(msg))
+                return Err(ConfigError::NoToken)
             }
         };
 
@@ -59,10 +63,7 @@ impl Config {
         let app_backend_name = String::from(APP_BACKEND_NAME);
 
         if let Some(d) = dictionary.get(CONFIG_DISABLE) {
-            if d == true.to_string() {
-                let msg = String::from("Bot detection disabled");
-                return Err(ConfigError::Disabled(msg))
-            }
+            if d == true.to_string() { return Err(ConfigError::Disabled) }
         }
 
         Ok(Config{
@@ -82,13 +83,11 @@ impl fmt::Display for Config {
             - Environment: {},\n\
             - Token: {},\n\
             - App Backend: {},\n\
-            - Botd Backend URL: {},\n\
-            - Is Botd disabled: {}",
+            - Botd Backend: {}",
                    self.log_endpoint_name,
                    self.token,
-                   self.app_url,
-                   self.botd_url,
-                   self.disabled
+                   self.app_backend_name,
+                   self.botd_backend_name
             )
     }
 }

@@ -1,7 +1,7 @@
 use fastly::Request;
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::convert::TryFrom;
-use fastly::http::header::{CONTENT_TYPE, COOKIE};
+use fastly::http::header::{COOKIE};
 
 pub fn get_timestamp_ms() -> i64 {
     let timestamp = match SystemTime::now().duration_since(UNIX_EPOCH) {
@@ -65,18 +65,18 @@ pub fn is_static_requested(req: &Request) -> bool {
     false
 }
 
-pub fn is_html(req: &Request) -> bool {
-    if let Some(h) = req.get_header(CONTENT_TYPE) {
-        if let Ok(s) = h.to_str() {
-            s.to_lowercase().contains("text/html")
-        }
-    }
-    false
-}
+// pub fn is_html(req: &Request) -> bool {
+//     if let Some(h) = req.get_header(CONTENT_TYPE) {
+//         if let Ok(s) = h.to_str() {
+//             return s.to_lowercase().contains("text/html");
+//         }
+//     }
+//     false
+// }
 
 pub fn get_ip(req: &Request) -> String {
-    return match req.get_client_ip_addr() {
+    match req.get_client_ip_addr() {
         Some(t) => t.to_string(),
         None => "0.0.0.0".to_string()
-    };
+    }
 }

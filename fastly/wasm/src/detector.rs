@@ -1,15 +1,15 @@
 use fastly::{Request, Response};
 
-use crate::{ERROR_DESCRIPTION, REQUEST_ID_HEADER, REQUEST_STATUS_HEADER};
+use crate::{ERROR_DESCRIPTION, REQUEST_STATUS_HEADER};
 use crate::config::{Config};
 
 pub const PROCESSED: &str = "processed";
 pub const ERROR: &str = "error";
 
-pub const BLOB: String = String::from("");
+pub const BLOB: &str = "";
 
 pub trait Detect {
-    fn make(req: &Request, config: &Config) -> Result<Self, &str>;
+    fn make(req: &mut Request, config: &Config) -> Result<Self, String> where Self: Sized;
     fn get_request_id(&self) -> String;
 }
 
@@ -39,26 +39,26 @@ pub fn transfer_headers(req: &mut Request, botd_resp: &Response) {
     }
 }
 
-pub fn get_request_id(resp: &Response) -> Result<String, &str> {
-    let request_id_header = match resp.get_header(REQUEST_ID_HEADER) {
-        Some(r) => r,
-        None => return Err("[Compute@Edge] Request id cannot be found.")
-    };
+// fn get_request_id(resp: &Response) -> Result<String, String> {
+//     let request_id_header = match resp.get_header(REQUEST_ID_HEADER) {
+//         Some(r) => r,
+//         _ => return Err(String::from("[Compute@Edge] Request id cannot be found."))
+//     };
+//
+//     return match request_id_header.to_str() {
+//         Ok(s) => Ok(String::from(s)),
+//         Err(_e) => Err(String::from("[Compute@Edge] Can't cast request id header to string."))
+//     };
+// }
 
-    return match request_id_header.to_str() {
-        Ok(s) => Ok(String::from(s)),
-        Err(e) => Err("[Compute@Edge] Can't cast request id header to string.")
-    };
-}
-
-pub fn check_resp(resp: &Response) -> Result<(), &str> {
+pub fn check_resp(resp: &Response) -> Result<(), String> {
     let request_status = match resp.get_header(REQUEST_STATUS_HEADER) {
         Some(r) => r,
-        None => return Err("[Compute@Edge] Request status cannot be found.")
+        _ => return Err(String::from("[Compute@Edge] Request status cannot be found."))
     };
 
     if !request_status.eq(PROCESSED) && resp.get_header(ERROR_DESCRIPTION).is_none() {
-        return Err("[Compute@Edge] Request status is not processed, but error description cannot be found.")
+        return Err(String::from("[Compute@Edge] Request status is not processed, but error description cannot be found."))
     }
 
     Ok(())

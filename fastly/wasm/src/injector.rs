@@ -1,4 +1,3 @@
-use std::fmt;
 use regex::Regex;
 use crate::config::Config;
 
@@ -8,19 +7,22 @@ pub enum InjectorError {
     /// A regex syntax error.
     RegexSyntax(String),
     /// Passed HTML string doesn't contain <head> tag
-    WrongHTML(String),
+    WrongHTML,
 }
 
-impl fmt::Display for InjectorError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Debug::fmt(self, f)
+impl ToString for InjectorError {
+    fn to_string(&self) -> String {
+        match self {
+            InjectorError::RegexSyntax(s) => s.to_owned(),
+            InjectorError::WrongHTML => String::from("Can't find head tag in response body.")
+        }
     }
 }
 
-pub fn inject_script(html: &String, config: &Config) -> Result<String, InjectorError> {
+pub fn inject_script(html: &str, config: &Config) -> Result<String, InjectorError> {
     let debug_url_replacement = match config.debug_botd_url.to_owned() {
         Some(e) => format!("endpoint: \"{}\",", e),
-        None => ""
+        _ => String::from("")
     };
 
     log::debug!("[inject_script] Inject script with token: {}", config.token);
@@ -42,9 +44,9 @@ pub fn inject_script(html: &String, config: &Config) -> Result<String, InjectorE
         if let Some(m) = r.find(html) {
             let i = m.end();
             result.insert_str(i, script.as_str());
-            Ok(result)
+            return Ok(result);
         }
-        Err(InjectorError::WrongHTML(String::from("Can't find head tag in response body.")))
+        return Err(InjectorError::WrongHTML);
     }
     Err(InjectorError::RegexSyntax(format!("Can't create regex {}", re)))
 }

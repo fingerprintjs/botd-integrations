@@ -11,10 +11,8 @@ use fastly::http::header;
 use header::HOST;
 use log::LevelFilter::Debug;
 use mime::TEXT_HTML_UTF_8;
-
 use botd::BotDetector;
 use edge::EdgeDetect;
-
 use crate::config::{Config, APP_BACKEND_NAME};
 use crate::detector::{Detect, ERROR};
 use crate::injector::inject_script;
@@ -49,7 +47,7 @@ fn main(mut req: Request) -> Result<Response, Error> {
     log::debug!("[main] Request received from: {}, url: {}", get_ip(&req), req.get_url_str());
 
     // Set HOST header for CORS policy
-    if let Some(h) = config.app_host {
+    if let Some(h) = config.app_host.to_owned() {
         log::debug!("[main] Application host: {}", h);
         req.set_header(HOST, h);
     }
@@ -59,15 +57,29 @@ fn main(mut req: Request) -> Result<Response, Error> {
             log::debug!("[main] Initial request, starting edge detect");
 
             let mut request = req.clone_with_body();
-            let edge = EdgeDetect::make(&mut request, &config)?;
+            let edge = match EdgeDetect::make(&mut request, &config) {
+                Ok(c) => c,
+                Err(e) => {
+                    set_error(&mut req, e, None);
+                    return Ok(req.send(APP_BACKEND_NAME)?)
+                }
+            };
             let response = request.send(APP_BACKEND_NAME)?;
+            let resp_clone = response.clone_without_body();
 
             log::debug!("[main] Insert botd script");
 
-            let new_body = inject_script(&response.into_body_str(), &config);
+            let body = response.into_body_str();
+            let new_body = match inject_script(&body, &config){
+                Ok(c) => c,
+                Err(e) => {
+                    set_error(&mut req, e.to_string(), None);
+                    return Ok(req.send(APP_BACKEND_NAME)?)
+                }
+            };
             let cookie_value = format!("{}{}", COOKIE_NAME, edge.get_request_id());
 
-            Ok(response
+            Ok(resp_clone
                 .with_content_type(TEXT_HTML_UTF_8)
                 .with_header(SET_COOKIE_HEADER, cookie_value)
                 .with_body(new_body))
@@ -76,7 +88,13 @@ fn main(mut req: Request) -> Result<Response, Error> {
             if is_static_requested(&req) {
                 if req.get_path().ends_with(".ico") {
                     log::debug!("[main] favicon request, starting light detect");
-                    EdgeDetect::make(&mut req, &config)?;
+                    match EdgeDetect::make(&mut req, &config) {
+                        Ok(c) => c,
+                        Err(e) => {
+                            set_error(&mut req, e, None);
+                            return Ok(req.send(APP_BACKEND_NAME)?)
+                        }
+                    };
                     return Ok(req.send(APP_BACKEND_NAME)?);
                 }
                 log::debug!("[main] path: {}, static requested => skipped bot detection", req.get_path().to_owned());
@@ -85,7 +103,13 @@ fn main(mut req: Request) -> Result<Response, Error> {
 
             log::debug!("[main] path: {}, not static => do bot detection", req.get_path().to_owned());
 
-            BotDetector::make(&mut req, &config)?;
+            match BotDetector::make(&mut req, &config) {
+                Ok(c) => c,
+                Err(e) => {
+                    set_error(&mut req, e, None);
+                    return Ok(req.send(APP_BACKEND_NAME)?)
+                }
+            };
             Ok(req.send(APP_BACKEND_NAME)?)
         }
     }

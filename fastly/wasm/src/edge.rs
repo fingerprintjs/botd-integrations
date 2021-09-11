@@ -10,7 +10,7 @@ pub struct EdgeDetect {
     previous_request_id: String,
 }
 
-fn create_body(req: &Request, previous_request_id: &String) -> &str {
+fn create_body(req: &Request, previous_request_id: &str) -> String {
     let headers_names = req.get_header_names_str();
     let mut headers_json = JsonValue::new_object();
 
@@ -30,32 +30,37 @@ fn create_body(req: &Request, previous_request_id: &String) -> &str {
     let mut json = JsonValue::new_object();
     json["headers"] = headers_json;
     json["path"] = req.get_path().into();
-    json["previous_request_id"] = previous_request_id.into();
+    json["previous_request_id"] = previous_request_id.to_owned().into();
     json["timestamp"] = timestamp.into();
 
     log::debug!("[collect_from_initial_request] json: {}", json.dump());
 
-    json.dump().as_str()
+    json.dump()
 }
 
 impl Detect for EdgeDetect {
-    fn make(req: &mut Request, config: &Config) -> Result<Self, &str> {
+    fn make(req: &mut Request, config: &Config) -> Result<Self, String> {
         let previous_request_id = match get_cookie(req, COOKIE_NAME) {
-            Some(r) => r.to_owned(),
-            _ => ""
+            Some(r) => r,
+            _ => String::from("")
         };
         let endpoint = BotdEndpoint::new("/light");
         let body = create_body(req, &previous_request_id);
         let mut edge_request = Request::post(BLOB);
         edge_request.set_path(endpoint.path.as_str());
         edge_request.set_query_str("header");
-        edge_request.set_body_text_plain(body);
+        edge_request.set_body_text_plain(body.as_str());
         edge_request.set_header("Auth-Token", config.token.to_owned());
 
-        let botd_resp = edge_request.send(BOTD_BACKEND_NAME).ok();
+        let botd_resp = match edge_request.send(BOTD_BACKEND_NAME) {
+            Ok(r) => r,
+            Err(_) => return Err(String::from("Send error"))
+        };
 
-        let err = check_resp(&botd_resp);
-        transfer_headers(req, botd_resp);
+        if let Err(err) = check_resp(&botd_resp) {
+            return Err(err)
+        }
+        transfer_headers(req, &botd_resp);
 
         Ok(EdgeDetect { previous_request_id })
     }
