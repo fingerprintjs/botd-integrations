@@ -1,16 +1,12 @@
 use fastly::{Request, Response};
-
-use crate::{ERROR_DESCRIPTION, REQUEST_STATUS_HEADER};
 use crate::config::{Config};
+use crate::{ERROR_DESCRIPTION, REQUEST_STATUS_HEADER};
 
 pub const PROCESSED: &str = "processed";
 pub const ERROR: &str = "error";
 
-pub const BLOB: &str = "";
-
 pub trait Detect {
     fn make(req: &mut Request, config: &Config) -> Result<Self, String> where Self: Sized;
-    fn get_request_id(&self) -> String;
 }
 
 pub fn transfer_headers(req: &mut Request, botd_resp: &Response) {
@@ -31,7 +27,6 @@ pub fn transfer_headers(req: &mut Request, botd_resp: &Response) {
         "botd-vm-prob",
         "botd-vm-type"
     ];
-
     for header_name in RESULT_HEADERS {
         if let Some(header_value) = botd_resp.get_header(header_name) {
             req.set_header(header_name, header_value);
@@ -54,12 +49,10 @@ pub fn transfer_headers(req: &mut Request, botd_resp: &Response) {
 pub fn check_resp(resp: &Response) -> Result<(), String> {
     let request_status = match resp.get_header(REQUEST_STATUS_HEADER) {
         Some(r) => r,
-        _ => return Err(String::from("[Compute@Edge] Request status cannot be found."))
+        _ => return Err(String::from("Request status cannot be found."))
     };
-
     if !request_status.eq(PROCESSED) && resp.get_header(ERROR_DESCRIPTION).is_none() {
-        return Err(String::from("[Compute@Edge] Request status is not processed, but error description cannot be found."))
+        return Err(String::from("Request status is not processed, but error description cannot be found."))
     }
-
     Ok(())
 }

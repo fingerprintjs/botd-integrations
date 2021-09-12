@@ -23,7 +23,6 @@ pub fn get_timestamp_ms() -> i64 {
 pub fn get_cookie(req: &Request, name: &str) -> Option<String> {
     let cookie = req.get_header(COOKIE)?.to_str().ok()?;
     let position = cookie.find(name)?;
-
     let mut cookie_value: String = String::new();
     let position = position + name.len();
     for i in position..cookie.len() {
@@ -38,13 +37,10 @@ pub fn get_cookie(req: &Request, name: &str) -> Option<String> {
 
 pub fn is_static_requested(req: &Request) -> bool {
     const SEC_FETCH_DEST_HEADER: &str = "sec-fetch-dest";
-
     // TODO: add all static types
     const STATIC_SEC_FETCH_DEST: [&str; 7] = ["font", "script", "image", "style", "video", "manifest", "object"];
-
     // TODO: add all static types
     const STATIC_PATH_ENDINGS: [&str; 7] = [".css", ".js", ".jpg", ".png", ".svg", ".jpeg", ".woff2"];
-
     // sec-fetch-dest header shows which content was requested, but it works not in all web-browsers
     let sec_fetch_dest_op = req.get_header(String::from(SEC_FETCH_DEST_HEADER));
     if let Some(sec_fetch_dest) = sec_fetch_dest_op {
@@ -55,7 +51,6 @@ pub fn is_static_requested(req: &Request) -> bool {
         }
         return false;
     }
-
     // sec-fetch-dest header doesn't exist => check by path ending
     for s in STATIC_PATH_ENDINGS.iter() {
         if req.get_path().ends_with(s) {
@@ -77,6 +72,6 @@ pub fn is_static_requested(req: &Request) -> bool {
 pub fn get_ip(req: &Request) -> String {
     match req.get_client_ip_addr() {
         Some(t) => t.to_string(),
-        None => "0.0.0.0".to_string()
+        _ => "0.0.0.0".to_string()
     }
 }

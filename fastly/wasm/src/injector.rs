@@ -1,5 +1,5 @@
 use regex::Regex;
-use crate::config::Config;
+use crate::config::{Config, DEFAULT_BOTD_PATH};
 
 
 /// An error that occurred during injecting botd script
@@ -20,30 +20,23 @@ impl ToString for InjectorError {
 }
 
 pub fn inject_script(html: &str, config: &Config) -> Result<String, InjectorError> {
-    let debug_url_replacement = match config.debug_botd_url.to_owned() {
-        Some(e) => format!("endpoint: \"{}\",", e),
-        _ => String::from("")
-    };
-
     log::debug!("[inject_script] Inject script with token: {}", config.token);
+    let endpoint = format!("{}{}", config.botd_url, DEFAULT_BOTD_PATH);
     let script = format!("
     <script>
         async function getResults() {{
-            const botdPromise = Botd.load({{ token: \"{}\", mode: \"requestId\", {}}})
+            const botdPromise = Botd.load({{ token: \"{}\", mode: \"requestId\", endpoint: \"{}\"}})
             const botd = await botdPromise
             const result = await botd.detect()
         }}
     </script>
     <script src=\"https://cdn.jsdelivr.net/npm/@fpjs-incubator/botd-agent@0/dist/botd.min.js\" onload=\"getResults()\"></script>
-    ", config.token, debug_url_replacement);
-
+    ", config.token, endpoint);
     let mut result = html.to_owned();
-
     let re = r"(<head.*>)";
     if let Ok(r) = Regex::new(re) {
         if let Some(m) = r.find(html) {
-            let i = m.end();
-            result.insert_str(i, script.as_str());
+            result.insert_str(m.end(), script.as_str());
             return Ok(result);
         }
         return Err(InjectorError::WrongHTML);
