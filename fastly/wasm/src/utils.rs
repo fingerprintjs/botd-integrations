@@ -22,9 +22,8 @@ pub fn get_timestamp_ms() -> i64 {
 
 pub fn get_cookie(req: &Request, name: &str) -> Option<String> {
     let cookie = req.get_header(COOKIE)?.to_str().ok()?;
-    let position = cookie.find(name)?;
     let mut cookie_value: String = String::new();
-    let position = position + name.len();
+    let position = cookie.find(name)? + name.len() + 1;
     for i in position..cookie.len() {
         let c = cookie.chars().nth(i)?;
         if c == ' ' || c == ';' {
@@ -68,10 +67,3 @@ pub fn is_static_requested(req: &Request) -> bool {
 //     }
 //     false
 // }
-
-pub fn get_ip(req: &Request) -> String {
-    match req.get_client_ip_addr() {
-        Some(t) => t.to_string(),
-        _ => "0.0.0.0".to_string()
-    }
-}

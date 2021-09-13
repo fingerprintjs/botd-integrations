@@ -1,13 +1,14 @@
 use fastly::Request;
 use json::JsonValue;
-use crate::{COOKIE_NAME};
+use crate::{REQUEST_ID_HEADER_COOKIE};
 use crate::utils::{get_cookie, get_timestamp_ms};
 use crate::config::{Config, BOTD_BACKEND_NAME};
-use crate::detector::{Detect, check_resp, transfer_headers};
+use crate::detector::{Detect, check_resp, transfer_headers, get_request_id};
 use crate::endpoint::BotdEndpoint;
+use crate::error::BotdError;
 
 pub struct EdgeDetect {
-    pub previous_request_id: String,
+    pub request_id: String,
 }
 
 impl EdgeDetect {
@@ -19,7 +20,7 @@ impl EdgeDetect {
             if let Some(h) = header_value {
                 headers_json[header_name] = json::JsonValue::new_array();
                 if let Err(e) = headers_json[header_name].push(h) {
-                    log::error!("[EdgeDetect.create_body] Error: {}", e);
+                    log::error!("[edge] Error: {}", e.to_string());
                 }
             }
         }
@@ -34,12 +35,15 @@ impl EdgeDetect {
 }
 
 impl Detect for EdgeDetect {
-    fn make(req: &mut Request, config: &Config) -> Result<Self, String> {
-        let previous_request_id = match get_cookie(req, COOKIE_NAME) {
-            Some(r) => r,
+    fn make(req: &mut Request, config: &Config) -> Result<Self, BotdError> {
+        let previous_request_id = match get_cookie(req, REQUEST_ID_HEADER_COOKIE) {
+            Some(r) => {
+                log::debug!("[edge] Previous request id: {}", r);
+                r
+            },
             _ => String::from("")
         };
-        let endpoint = BotdEndpoint::new("/light");
+        let endpoint = BotdEndpoint::new(config,"/light");
         let body = EdgeDetect::create_body(req, &previous_request_id);
         let edge_resp = match Request::post(config.botd_url.to_owned())
             .with_path(endpoint.path.as_str())
@@ -48,10 +52,11 @@ impl Detect for EdgeDetect {
             .with_header("Auth-Token", config.token.to_owned())
             .send(BOTD_BACKEND_NAME) {
             Ok(r) => r,
-            Err(_) => { return Err(String::from("Send error")) }
+            Err(e) => return Err(BotdError::SendError(String::from(e.backend_name())))
         };
         if let Err(err) = check_resp(&edge_resp) { return Err(err) }
+        let request_id = get_request_id(&edge_resp)?;
         transfer_headers(req, &edge_resp);
-        Ok(EdgeDetect { previous_request_id })
+        Ok(EdgeDetect { request_id })
     }
 }
