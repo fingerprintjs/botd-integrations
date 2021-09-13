@@ -38,4 +38,4 @@ Login: `human`, Password: `iamnotbot`
 10. Test your app on the provided `Domain` with the given sample credentials.
 
 ## Setting up with the source code
-If you want to build and release integration from source code, [follow the wiki guidelines](https://github.com/fingerprintjs/botd-integrations/wiki/Setting-up-Fastly-WASM-inegration-from-source-code).
+If you want to build and release integration from source code, [follow the wiki guidelines](https://github.com/fingerprintjs/botd-integrations/wiki/Setting-up-Fastly-WASM-integration-from-source-code).
