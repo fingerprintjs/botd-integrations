@@ -43,7 +43,7 @@ impl Detect for EdgeDetect {
             },
             _ => String::from("")
         };
-        let endpoint = BotdEndpoint::new(config,"/light");
+        let endpoint = BotdEndpoint::new("/light");
         let body = EdgeDetect::create_body(req, &previous_request_id);
         let edge_resp = match Request::post(config.botd_url.to_owned())
             .with_path(endpoint.path.as_str())

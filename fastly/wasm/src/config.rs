@@ -3,11 +3,11 @@ use fastly::Dictionary;
 
 /// This should match the name of your storage backend. See the the `Hosts` section of
 /// the Fastly WASM service UI for more information.
-pub const BOTD_BACKEND_NAME: &str = "Botd";
-pub const APP_BACKEND_NAME: &str = "Backend";
+pub const BOTD_BACKEND_NAME: &str = "botd";
+pub const APP_BACKEND_NAME: &str = "backend";
+pub const CDN_BACKEND_NAME: &str = "cdn";
 
-pub const DEFAULT_BOTD_PATH: &str = "/api/v1/";
-const DEFAULT_LOG_ENDPOINT_NAME: &str = "Local";
+const DEFAULT_LOG_ENDPOINT_NAME: &str = "local";
 const DEFAULT_BOTD_URL: &str = "https://botd.fpapi.io/";
 pub const CONFIG_DICT_NAME: &str = "botd_config";
 pub const CONFIG_TOKEN: &str = "token";

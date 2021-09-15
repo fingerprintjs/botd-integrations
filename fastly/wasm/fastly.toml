@@ -6,3 +6,23 @@ description = "FingerprintJS Botd integration with Fastly"
 language = "rust"
 manifest_version = 1
 name = "fpjs-wasm-integration"
+
+[setup]
+
+    [[setup.backends]]
+    address = "botd-example-app.fpjs.sh"
+    name = "backend"
+    port = 80
+    prompt = "Application backend"
+
+    [[setup.backends]]
+    address = "botd.fpapi.io"
+    name = "botd"
+    port = 443
+    prompt = "Botd backend"
+
+    [[setup.backends]]
+    address = "script-proxy.edgecompute.app"
+    name = "cdn"
+    port = 443
+    prompt = "CDN"

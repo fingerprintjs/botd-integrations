@@ -10,13 +10,24 @@ pub struct BotDetector {
     pub request_id: String
 }
 
+impl BotDetector {
+    pub fn extract_request_id(body: &str) -> Option<String> {
+        let json = json::parse(body).ok()?;
+        log::debug!("[get_request_id] Response body: {}", json.as_str()?);
+        if json.is_object() {
+            return json["requestId"].to_owned().take_string()
+        }
+        None
+    }
+}
+
 impl Detect for BotDetector {
     fn make(req: &mut Request, config: &Config) -> Result<Self, BotdError> {
         let request_id = match get_cookie(req, REQUEST_ID_HEADER_COOKIE) {
             Some(r) => r,
             _ => return Err(BotdError::NoRequestIdInCookie)
         };
-        let endpoint = BotdEndpoint::new(config, "/results");
+        let endpoint = BotdEndpoint::new("/results");
         let query = format!("header&token={}&id={}", config.token.to_owned(), request_id);
         log::debug!("[botd] request_id = {}, query: ?{}", request_id, query);
         let botd_resp = Request::get(config.botd_url.to_owned())

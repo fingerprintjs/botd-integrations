@@ -2,6 +2,7 @@ use fastly::Request;
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::convert::TryFrom;
 use fastly::http::header::{COOKIE};
+use cookie::{Cookie, SameSite};
 
 pub fn get_timestamp_ms() -> i64 {
     let timestamp = match SystemTime::now().duration_since(UNIX_EPOCH) {
@@ -20,18 +21,25 @@ pub fn get_timestamp_ms() -> i64 {
     };
 }
 
+pub fn make_cookie(name: String, value: String) -> String {
+    Cookie::build(name, value)
+        .path("/")
+        .secure(true)
+        .http_only(true)
+        .same_site(SameSite::None)
+        .finish()
+        .to_string()
+}
+
 pub fn get_cookie(req: &Request, name: &str) -> Option<String> {
-    let cookie = req.get_header(COOKIE)?.to_str().ok()?;
-    let mut cookie_value: String = String::new();
-    let position = cookie.find(name)? + name.len() + 1;
-    for i in position..cookie.len() {
-        let c = cookie.chars().nth(i)?;
-        if c == ' ' || c == ';' {
-            break;
+    let cookies = req.get_header(COOKIE)?.to_str().ok()?.split(';');
+    for c in cookies {
+        let cookie = Cookie::parse(c).ok()?;
+        if cookie.name() == name {
+            return Some(String::from(cookie.value()))
         }
-        cookie_value.push(c);
     }
-    Some(cookie_value)
+    None
 }
 
 pub fn is_static_requested(req: &Request) -> bool {
