@@ -17,7 +17,7 @@ use edge::EdgeDetect;
 use crate::config::{Config, APP_BACKEND_NAME, BOTD_BACKEND_NAME, CDN_BACKEND_NAME};
 use crate::detector::{Detect, ERROR};
 use crate::injector::inject_script;
-use crate::utils::{is_static_requested, make_cookie};
+use crate::utils::{is_static_requested, make_cookie, is_favicon_requested};
 use crate::endpoint::BotdEndpoint;
 
 const PATH_HASH: &str = "2f70092c";
@@ -33,7 +33,7 @@ fn send_error(req: Request, desc: String, request_id: Option<String>) -> Result<
         .with_header(ERROR_DESCRIPTION_HEADER, desc).send(APP_BACKEND_NAME)?)
 }
 
-fn static_request(mut req: Request, config: &Config) -> Result<Response, Error> {
+fn initial_request(mut req: Request, config: &Config) -> Result<Response, Error> {
     log::debug!("[main] Initial request, starting edge detect");
     let mut request = req.clone_with_body();
     let edge = match EdgeDetect::make(&mut request, config) {
@@ -50,7 +50,7 @@ fn static_request(mut req: Request, config: &Config) -> Result<Response, Error> 
         Err(e) => return send_error(req, e.to_string(), Some(edge.request_id))
     };
     let cookie = make_cookie(String::from(REQUEST_ID_HEADER_COOKIE), edge.request_id);
-    log::debug!("[main] Cookie: {}", cookie);
+    log::debug!("[main] Set cookie to initial response: {}", cookie);
     Ok(resp_clone
         .with_header(SET_COOKIE, cookie)
         .with_body(new_body))
@@ -58,10 +58,10 @@ fn static_request(mut req: Request, config: &Config) -> Result<Response, Error> 
 
 fn detect_request(req: Request) -> Result<Response, Error> {
     let endpoint = BotdEndpoint::new("/detect");
-    let response = req
+    let mut response = req
         .with_path(endpoint.path.as_str())
         .send(BOTD_BACKEND_NAME)?;
-    let resp_clone = response.clone_without_body();
+    let resp_clone = response.clone_with_body();
     let body = response.into_body_str();
     let request_id = match BotDetector::extract_request_id(body.as_str()) {
         Some(r) => r,
@@ -71,10 +71,8 @@ fn detect_request(req: Request) -> Result<Response, Error> {
         }
     };
     let cookie = make_cookie(String::from(REQUEST_ID_HEADER_COOKIE), request_id);
-    log::debug!("[main] Cookie: {}", cookie);
-    Ok(resp_clone
-        .with_header(SET_COOKIE, cookie)
-        .with_body(body))
+    log::debug!("[main] Set cookie to detect response: {}", cookie);
+    Ok(resp_clone.with_header(SET_COOKIE, cookie))
 }
 
 fn dist_request(req: Request) -> Result<Response, Error> {
@@ -84,30 +82,33 @@ fn dist_request(req: Request) -> Result<Response, Error> {
         .send(CDN_BACKEND_NAME)?)
 }
 
-fn other_request(mut req: Request, config: &Config) -> Result<Response, Error> {
-    if is_static_requested(&req) {
-        if req.get_path().ends_with(".ico") {
-            log::debug!("[main] Favicon request, starting edge detect");
-            return match EdgeDetect::make(&mut req, config) {
-                Ok(d) => {
-                    let cookie = make_cookie(String::from(REQUEST_ID_HEADER_COOKIE), d.request_id);
-                    Ok(req
-                        .with_header(SET_COOKIE, cookie)
-                        .send(APP_BACKEND_NAME)?)
-                }
-                Err(e) => send_error(req, e.to_string(), None)
-            };
+fn favicon_request(mut req: Request, config: &Config) -> Result<Response, Error> {
+    log::debug!("[main] Favicon request => starting edge detect");
+    return match EdgeDetect::make(&mut req, config) {
+        Ok(d) => {
+            let response = req.send(APP_BACKEND_NAME)?;
+            let cookie = make_cookie(String::from(REQUEST_ID_HEADER_COOKIE), d.request_id);
+            log::debug!("[main] Set cookie to favicon response: {}", cookie);
+            Ok(response.with_header(SET_COOKIE, cookie))
         }
-        log::debug!("[main] Path: {}, static requested => skipped bot detection", req.get_path().to_owned());
-        return Ok(req.send(APP_BACKEND_NAME)?);
-    }
-    log::debug!("[main] Path: {}, not static => do bot detection", req.get_path().to_owned());
+        Err(e) => send_error(req, e.to_string(), None)
+    };
+}
+
+fn static_request(req: Request) -> Result<Response, Error> {
+    log::debug!("[main] Static request => skipped bot detection");
+    Ok(req.send(APP_BACKEND_NAME)?)
+}
+
+fn non_static_request(mut req: Request, config: &Config) -> Result<Response, Error> {
+    log::debug!("[main] Not static request => do bot detection");
     match BotDetector::make(&mut req, config) {
         Ok(d) => {
-            let cookie = make_cookie(String::from(REQUEST_ID_HEADER_COOKIE), d.request_id);
-            Ok(req
-                .with_header(SET_COOKIE, cookie)
-                .send(APP_BACKEND_NAME)?)
+            Ok(req.send(APP_BACKEND_NAME)?)
+            // let response = req.send(APP_BACKEND_NAME)?;
+            // let cookie = make_cookie(String::from(REQUEST_ID_HEADER_COOKIE), d.request_id);
+            // log::debug!("[main] Set cookie to non-static response: {}", cookie);
+            // Ok(response.with_header(SET_COOKIE, cookie))
         },
         Err(e) => send_error(req, e.to_string(), None)
     }
@@ -126,10 +127,10 @@ fn main(mut req: Request) -> Result<Response, Error> {
         Some(t) => t.to_string(),
         _ => String::from("0.0.0.0")
     };
-    log::debug!("[main] Request received from: {}, url: {}", ip, req.get_url_str());
+    log::debug!("[main] New request received from: {}, url: {}", ip, req.get_url_str());
     // Set HOST header for CORS policy
     if let Some(h) = config.app_host.to_owned() {
-        log::debug!("[main] Application host: {}", h);
+        log::debug!("[main] Host header replacement to application host: {}", h);
         req.set_header(HOST, h);
     }
 
@@ -137,9 +138,11 @@ fn main(mut req: Request) -> Result<Response, Error> {
     let dist_path = format!("/{}/dist", PATH_HASH);
 
     return match req.get_path() {
-        "/" => static_request(req, &config),
+        "/" => initial_request(req, &config),
         path if path == detect_path => detect_request(req),
         path if path.starts_with(&dist_path) => dist_request(req),
-        _ => other_request(req, &config),
+        _ if is_favicon_requested(&req) => favicon_request(req, &config),
+        _ if !is_static_requested(&req) => non_static_request(req, &config),
+        _ => static_request(req)
     };
 }

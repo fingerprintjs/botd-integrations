@@ -67,6 +67,10 @@ pub fn is_static_requested(req: &Request) -> bool {
     false
 }
 
+pub fn is_favicon_requested(req: &Request) -> bool {
+    return is_static_requested(req) && req.get_path().ends_with(".ico")
+}
+
 // pub fn is_html(req: &Request) -> bool {
 //     if let Some(h) = req.get_header(CONTENT_TYPE) {
 //         if let Ok(s) = h.to_str() {

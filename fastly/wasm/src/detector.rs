@@ -47,6 +47,7 @@ pub fn get_request_id(resp: &Response) -> Result<String, BotdError> {
 }
 
 pub fn check_resp(resp: &Response) -> Result<(), BotdError> {
+    log::debug!("{:?}", resp.get_header_names_str());
     let request_status = match resp.get_header(REQUEST_STATUS_HEADER) {
         Some(r) => r,
         _ => return Err(BotdError::NoRequestStatusInHeaders)
