@@ -20,7 +20,7 @@ impl EdgeDetect {
             if let Some(h) = header_value {
                 headers_json[header_name] = json::JsonValue::new_array();
                 if let Err(e) = headers_json[header_name].push(h) {
-                    log::error!("[edge] Error: {}", e.to_string());
+                    log::error!("[error] {}", e.to_string());
                 }
             }
         }

@@ -13,7 +13,6 @@ pub struct BotDetector {
 impl BotDetector {
     pub fn extract_request_id(body: &str) -> Option<String> {
         let json = json::parse(body).ok()?;
-        log::debug!("[get_request_id] Response body: {}", json.as_str()?);
         if json.is_object() {
             return json["requestId"].to_owned().take_string()
         }

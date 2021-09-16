@@ -8,14 +8,14 @@ pub fn get_timestamp_ms() -> i64 {
     let timestamp = match SystemTime::now().duration_since(UNIX_EPOCH) {
         Ok(t) => t.as_millis(),
         Err(e) => {
-            log::error!("[get_timestamp_ms] {}", e);
+            log::error!("[error] {}", e);
             return -1;
         }
     };
     return match i64::try_from(timestamp) {
         Ok(t) => t,
         Err(e) => {
-            log::error!("[get_timestamp_ms] {}", e);
+            log::error!("[error] {}", e);
             -1
         }
     };
