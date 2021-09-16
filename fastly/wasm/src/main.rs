@@ -40,6 +40,7 @@ fn static_request(mut req: Request, config: &Config) -> Result<Response, Error> 
         Ok(d) => d,
         Err(e) => return send_error(req, e.to_string(), None)
     };
+    log::debug!("[main] Edge detect request id: {}", edge.request_id);
     let response = request.send(APP_BACKEND_NAME)?;
     let resp_clone = response.clone_without_body();
     log::debug!("[main] Insert botd script");

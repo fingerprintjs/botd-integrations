@@ -1,5 +1,3 @@
-use crate::config::{CONFIG_DICT_NAME, CONFIG_TOKEN};
-
 /// An error that occurred during bot detection
 pub enum BotdError {
     /// A regex syntax error.
@@ -29,7 +27,7 @@ impl ToString for BotdError {
         match self {
             BotdError::RegexSyntax(re) => format!("Can't create regex {}", re),
             BotdError::WrongHTML => String::from("Can't find head tag in response body"),
-            BotdError::NoTokenInConfig => format!("Can't get botd token from {} dictionary by key {}", CONFIG_DICT_NAME, CONFIG_TOKEN),
+            BotdError::NoTokenInConfig => String::from("Can't get botd token from config"),
             BotdError::Disabled => String::from("Bot detection disabled"),
             BotdError::NoRequestIdInHeaders => String::from("Request id cannot be found in headers"),
             BotdError::NoRequestStatusInHeaders => String::from("Request status cannot be found in headers"),

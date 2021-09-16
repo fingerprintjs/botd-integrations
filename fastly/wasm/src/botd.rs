@@ -29,7 +29,9 @@ impl Detect for BotDetector {
         let endpoint = BotdEndpoint::new("/results");
         let query = format!("header&token={}&id={}", config.token.to_owned(), request_id);
         log::debug!("[botd] request_id = {}, query: ?{}", request_id, query);
-        let botd_resp = Request::get(config.botd_url.to_owned())
+        // let botd_resp = Request::get(config.botd_url.to_owned())
+        let botd_resp = req
+            .clone_without_body()
             .with_path(endpoint.path.as_str())
             .with_query_str(query)
             .send(BOTD_BACKEND_NAME);
