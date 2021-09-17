@@ -31,7 +31,7 @@ fn send_error(req: Request, desc: String, request_id: Option<String>) -> Result<
         .with_header(ERROR_DESCRIPTION_HEADER, desc).send(APP_BACKEND_NAME)?)
 }
 
-fn initial_request(mut req: Request, config: &Config) -> Result<Response, Error> {
+fn init_req_handler(mut req: Request, config: &Config) -> Result<Response, Error> {
     log::debug!("[main] Initial request, starting edge detect");
     let mut request = req.clone_with_body();
     let edge = match EdgeDetect::make(&mut request, config) {
@@ -54,7 +54,7 @@ fn initial_request(mut req: Request, config: &Config) -> Result<Response, Error>
         .with_body(new_body))
 }
 
-fn detect_request(req: Request) -> Result<Response, Error> {
+fn detect_req_handler(req: Request) -> Result<Response, Error> {
     let mut response = req
         .with_path("/api/v1/detect")
         .send(BOTD_BACKEND_NAME)?;
@@ -72,14 +72,14 @@ fn detect_request(req: Request) -> Result<Response, Error> {
     Ok(resp_clone.with_header(SET_COOKIE, cookie))
 }
 
-fn dist_request(req: Request) -> Result<Response, Error> {
+fn dist_req_handler(req: Request) -> Result<Response, Error> {
     Ok(req
         .with_path("/")
         .with_pass(false)
         .send(CDN_BACKEND_NAME)?)
 }
 
-fn favicon_request(mut req: Request, config: &Config) -> Result<Response, Error> {
+fn favicon_req_handler(mut req: Request, config: &Config) -> Result<Response, Error> {
     log::debug!("[main] Favicon request => starting edge detect");
     return match EdgeDetect::make(&mut req, config) {
         Ok(d) => {
@@ -92,12 +92,12 @@ fn favicon_request(mut req: Request, config: &Config) -> Result<Response, Error>
     };
 }
 
-fn static_request(req: Request) -> Result<Response, Error> {
+fn static_req_handler(req: Request) -> Result<Response, Error> {
     log::debug!("[main] Static request => skipped bot detection");
     Ok(req.send(APP_BACKEND_NAME)?)
 }
 
-fn non_static_request(mut req: Request, config: &Config) -> Result<Response, Error> {
+fn non_static_req_handler(mut req: Request, config: &Config) -> Result<Response, Error> {
     log::debug!("[main] Not static request => do bot detection");
     match BotDetector::make(&mut req, config) {
         Ok(_) => Ok(req.send(APP_BACKEND_NAME)?),
@@ -125,15 +125,13 @@ fn main(mut req: Request) -> Result<Response, Error> {
         req.set_header(HOST, h);
     }
 
-    let detect_path = format!("/{}/detect", PATH_HASH);
-    let dist_path = format!("/{}/dist", PATH_HASH);
 
     return match req.get_path() {
-        "/" => initial_request(req, &config),
-        path if path == detect_path => detect_request(req),
-        path if path.starts_with(&dist_path) => dist_request(req),
-        _ if is_favicon_requested(&req) => favicon_request(req, &config),
-        _ if !is_static_requested(&req) => non_static_request(req, &config),
-        _ => static_request(req)
+        "/" => init_req_handler(req, &config),
+        p if p == format!("/{}/detect", PATH_HASH) => detect_req_handler(req),
+        p if p.starts_with(&format!("/{}/dist", PATH_HASH)) => dist_req_handler(req),
+        _ if is_favicon_requested(&req) => favicon_req_handler(req, &config),
+        _ if !is_static_requested(&req) => non_static_req_handler(req, &config),
+        _ => static_req_handler(req)
     };
 }
