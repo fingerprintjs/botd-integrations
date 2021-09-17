@@ -1,10 +1,11 @@
 use crate::error::BotdError;
 use fastly::Dictionary;
+use BotdError::Disabled;
 
 /// This should match the name of your storage backend. See the the `Hosts` section of
 /// the Fastly WASM service UI for more information.
-pub const BOTD_BACKEND_NAME: &str = "botd";
 pub const APP_BACKEND_NAME: &str = "backend";
+pub const BOTD_BACKEND_NAME: &str = "botd";
 pub const CDN_BACKEND_NAME: &str = "cdn";
 
 pub struct Config {
@@ -32,8 +33,8 @@ impl Config {
         let log_endpoint_name_default = || String::from(DEFAULT_LOG_ENDPOINT);
         let log_endpoint_name = dictionary.get(CONFIG_LOG_ENDPOINT).unwrap_or_else(log_endpoint_name_default);
         if let Some(d) = dictionary.get(CONFIG_DISABLE) {
-            if d == true.to_string() { return Err(BotdError::Disabled) }
+            if d == true.to_string() { return Err(Disabled); }
         }
-        Ok(Config{ token, log_endpoint_name, app_host })
+        Ok(Config { token, log_endpoint_name, app_host })
     }
 }

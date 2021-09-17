@@ -1,10 +1,8 @@
 use fastly::{Request, Response};
+use BotdError::{NoRequestStatusInHeaders, NoErrorDescriptionInHeaders};
 use crate::config::Config;
 use crate::{ERROR_DESCRIPTION_HEADER, REQUEST_STATUS_HEADER};
 use crate::error::BotdError;
-
-pub const PROCESSED: &str = "processed";
-pub const ERROR: &str = "error";
 
 pub trait Detect {
     fn make(req: &mut Request, config: &Config) -> Result<Self, BotdError> where Self: Sized;
@@ -37,12 +35,12 @@ pub fn transfer_headers(req: &mut Request, botd_resp: &Response) {
 
 pub fn check_resp(resp: &Response) -> Result<(), BotdError> {
     log::debug!("{:?}", resp.get_header_names_str());
-    let request_status = match resp.get_header(REQUEST_STATUS_HEADER) {
+    let req_status = match resp.get_header(REQUEST_STATUS_HEADER) {
         Some(r) => r,
-        _ => return Err(BotdError::NoRequestStatusInHeaders)
+        _ => return Err(NoRequestStatusInHeaders)
     };
-    if !request_status.eq(PROCESSED) && resp.get_header(ERROR_DESCRIPTION_HEADER).is_none() {
-        return Err(BotdError::NoErrorDescriptionInHeaders)
+    if !req_status.eq("processed") && resp.get_header(ERROR_DESCRIPTION_HEADER).is_none() {
+        return Err(NoErrorDescriptionInHeaders);
     }
     Ok(())
 }

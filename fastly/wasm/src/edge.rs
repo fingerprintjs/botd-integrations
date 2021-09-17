@@ -6,9 +6,10 @@ use crate::detector::{Detect, check_resp, transfer_headers};
 use crate::request_id::RequestId;
 use crate::error::BotdError;
 use fastly::http::Method;
+use BotdError::SendError;
 
 pub struct EdgeDetect {
-    pub request_id: String,
+    pub req_id: String,
 }
 
 impl EdgeDetect {
@@ -45,11 +46,11 @@ impl Detect for EdgeDetect {
             .with_header("Auth-Token", config.token.to_owned())
             .send(BOTD_BACKEND_NAME) {
             Ok(r) => r,
-            Err(e) => return Err(BotdError::SendError(String::from(e.backend_name())))
+            Err(e) => return Err(SendError(e.root_cause().to_string()))
         };
-        if let Err(err) = check_resp(&edge_resp) { return Err(err) }
+        if let Err(err) = check_resp(&edge_resp) { return Err(err); }
         let req_id = RequestId::from_header(&edge_resp)?;
         transfer_headers(req, &edge_resp);
-        Ok(EdgeDetect { request_id: req_id })
+        Ok(EdgeDetect { req_id })
     }
 }

@@ -34,9 +34,10 @@ pub fn make_cookie(name: String, value: String) -> String {
 pub fn get_cookie(req: &Request, name: &str) -> Option<String> {
     let cookies = req.get_header(COOKIE)?.to_str().ok()?.split(';');
     for c in cookies {
-        let cookie = Cookie::parse(c).ok()?;
-        if cookie.name() == name {
-            return Some(String::from(cookie.value()))
+        if let Ok(cookie) = Cookie::parse(c) {
+            if cookie.name() == name {
+                return Some(String::from(cookie.value()));
+            }
         }
     }
     None
@@ -68,7 +69,7 @@ pub fn is_static_requested(req: &Request) -> bool {
 }
 
 pub fn is_favicon_requested(req: &Request) -> bool {
-    return is_static_requested(req) && req.get_path().ends_with(".ico")
+    return is_static_requested(req) && req.get_path().ends_with(".ico");
 }
 
 // pub fn is_html(req: &Request) -> bool {

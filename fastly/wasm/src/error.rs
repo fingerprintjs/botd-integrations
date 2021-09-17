@@ -33,7 +33,7 @@ impl ToString for BotdError {
             BotdError::NoRequestStatusInHeaders => String::from("Request status cannot be found in headers"),
             BotdError::NoErrorDescriptionInHeaders => String::from("Request status is not processed, but error description cannot be found."),
             BotdError::ToStringCast(name) => format!("Can't cast {} to string", name),
-            BotdError::SendError(desc) => format!("Error occurred during sending to {} backend", desc),
+            BotdError::SendError(desc) => format!("Error occurred during sending to backend: {}", desc),
             BotdError::NoRequestIdInCookie => String::from("Request id cannot be found in cookie"),
         }
     }
