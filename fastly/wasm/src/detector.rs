@@ -1,6 +1,6 @@
 use fastly::{Request, Response};
-use crate::config::{Config};
-use crate::{ERROR_DESCRIPTION_HEADER, REQUEST_STATUS_HEADER, REQUEST_ID_HEADER_COOKIE};
+use crate::config::Config;
+use crate::{ERROR_DESCRIPTION_HEADER, REQUEST_STATUS_HEADER};
 use crate::error::BotdError;
 
 pub const PROCESSED: &str = "processed";
@@ -33,17 +33,6 @@ pub fn transfer_headers(req: &mut Request, botd_resp: &Response) {
             req.set_header(header_name, header_value);
         };
     }
-}
-
-pub fn get_request_id(resp: &Response) -> Result<String, BotdError> {
-    let request_id_header = match resp.get_header(REQUEST_ID_HEADER_COOKIE) {
-        Some(r) => r,
-        _ => return Err(BotdError::NoRequestIdInHeaders)
-    };
-    return match request_id_header.to_str().ok() {
-        Some(s) => Ok(String::from(s)),
-        _ => Err(BotdError::ToStringCast(String::from("request id")))
-    };
 }
 
 pub fn check_resp(resp: &Response) -> Result<(), BotdError> {

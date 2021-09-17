@@ -1,8 +1,7 @@
 use fastly::Request;
 use crate::config::{Config, BOTD_BACKEND_NAME};
-use crate::{REQUEST_ID_HEADER_COOKIE};
-use crate::utils::get_cookie;
 use crate::detector::{Detect, check_resp, transfer_headers};
+use crate::request_id::RequestId;
 use crate::error::BotdError;
 use fastly::http::Method;
 
@@ -10,19 +9,9 @@ pub struct BotDetector {
     pub request_id: String
 }
 
-impl BotDetector {
-    pub fn extract_request_id(body: &str) -> Option<String> {
-        let json = json::parse(body).ok()?;
-        if json.is_object() {
-            return json["requestId"].to_owned().take_string()
-        }
-        None
-    }
-}
-
 impl Detect for BotDetector {
     fn make(req: &mut Request, config: &Config) -> Result<Self, BotdError> {
-        let request_id = match get_cookie(req, REQUEST_ID_HEADER_COOKIE) {
+        let request_id = match RequestId::from_cookie(req) {
             Some(r) => r,
             _ => return Err(BotdError::NoRequestIdInCookie)
         };

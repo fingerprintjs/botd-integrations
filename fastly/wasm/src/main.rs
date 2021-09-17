@@ -1,10 +1,11 @@
-mod config;
-mod utils;
+mod request_id;
 mod injector;
 mod detector;
+mod config;
+mod error;
+mod utils;
 mod botd;
 mod edge;
-mod error;
 
 use fastly::{Error, Request, Response};
 use fastly::http::header;
@@ -17,6 +18,7 @@ use crate::config::{Config, APP_BACKEND_NAME, BOTD_BACKEND_NAME, CDN_BACKEND_NAM
 use crate::utils::{is_static_requested, make_cookie, is_favicon_requested};
 use crate::detector::{Detect, ERROR};
 use crate::injector::inject_script;
+use crate::request_id::RequestId;
 
 const PATH_HASH: &str = "2f70092c";
 
@@ -26,7 +28,7 @@ pub const ERROR_DESCRIPTION_HEADER: &str = "botd-error-description";
 
 fn send_error(req: Request, desc: String, request_id: Option<String>) -> Result<Response, Error> {
     log::error!("[error] {}", desc);
-    Ok(req.with_header(REQUEST_ID_HEADER_COOKIE, request_id.unwrap_or_else(|| String::from("")))
+    Ok(req.with_header(REQUEST_ID_HEADER_COOKIE, request_id.unwrap_or_default())
         .with_header(REQUEST_STATUS_HEADER, ERROR)
         .with_header(ERROR_DESCRIPTION_HEADER, desc).send(APP_BACKEND_NAME)?)
 }
@@ -55,21 +57,14 @@ fn init_req_handler(mut req: Request, config: &Config) -> Result<Response, Error
 }
 
 fn detect_req_handler(req: Request) -> Result<Response, Error> {
-    let mut response = req
+    let mut botd_resp = req
         .with_path("/api/v1/detect")
         .send(BOTD_BACKEND_NAME)?;
-    let resp_clone = response.clone_with_body();
-    let body = response.into_body_str();
-    let request_id = match BotDetector::extract_request_id(body.as_str()) {
-        Some(r) => r,
-        _ => {
-            log::error!("[error] Can't extract request id from body.");
-            String::from("")
-        }
-    };
-    let cookie = make_cookie(String::from(REQUEST_ID_HEADER_COOKIE), request_id);
+    let botd_resp_clone = botd_resp.clone_with_body();
+    let req_id = RequestId::from_body(botd_resp_clone).unwrap_or_default();
+    let cookie = make_cookie(String::from(REQUEST_ID_HEADER_COOKIE), req_id);
     log::debug!("[main] Set cookie to detect response: {}", cookie);
-    Ok(resp_clone.with_header(SET_COOKIE, cookie))
+    Ok(botd_resp.with_header(SET_COOKIE, cookie))
 }
 
 fn dist_req_handler(req: Request) -> Result<Response, Error> {
@@ -124,7 +119,6 @@ fn main(mut req: Request) -> Result<Response, Error> {
         log::debug!("[main] Host header replacement to application host: {}", h);
         req.set_header(HOST, h);
     }
-
 
     return match req.get_path() {
         "/" => init_req_handler(req, &config),
