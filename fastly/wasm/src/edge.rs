@@ -4,7 +4,6 @@ use crate::REQUEST_ID_HEADER_COOKIE;
 use crate::utils::{get_cookie, get_timestamp_ms};
 use crate::config::{Config, BOTD_BACKEND_NAME};
 use crate::detector::{Detect, check_resp, transfer_headers, get_request_id};
-use crate::endpoint::BotdEndpoint;
 use crate::error::BotdError;
 use fastly::http::Method;
 
@@ -42,11 +41,10 @@ impl EdgeDetect {
 
 impl Detect for EdgeDetect {
     fn make(req: &mut Request, config: &Config) -> Result<Self, BotdError> {
-        let endpoint = BotdEndpoint::new("/light");
         let body = EdgeDetect::create_body(req);
         let edge_resp = match req.clone_without_body()
             .with_method(Method::POST)
-            .with_path(endpoint.path.as_str())
+            .with_path("/api/v1/light")
             .with_query_str("header")
             .with_body_text_plain(body.as_str())
             .with_header("Auth-Token", config.token.to_owned())

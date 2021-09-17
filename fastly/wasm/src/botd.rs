@@ -3,7 +3,6 @@ use crate::config::{Config, BOTD_BACKEND_NAME};
 use crate::{REQUEST_ID_HEADER_COOKIE};
 use crate::utils::get_cookie;
 use crate::detector::{Detect, check_resp, transfer_headers};
-use crate::endpoint::BotdEndpoint;
 use crate::error::BotdError;
 use fastly::http::Method;
 
@@ -27,13 +26,12 @@ impl Detect for BotDetector {
             Some(r) => r,
             _ => return Err(BotdError::NoRequestIdInCookie)
         };
-        let endpoint = BotdEndpoint::new("/results");
         let query = format!("header&token={}&id={}", config.token.to_owned(), request_id);
         log::debug!("[botd] request_id = {}, query: ?{}", request_id, query);
         let botd_resp = match req
             .clone_without_body()
             .with_method(Method::GET)
-            .with_path(endpoint.path.as_str())
+            .with_path("/api/v1/results")
             .with_query_str(query)
             .send(BOTD_BACKEND_NAME) {
             Ok(r) => r,

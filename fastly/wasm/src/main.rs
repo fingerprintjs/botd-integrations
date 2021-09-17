@@ -4,7 +4,6 @@ mod injector;
 mod detector;
 mod botd;
 mod edge;
-mod endpoint;
 mod error;
 
 use fastly::{Error, Request, Response};
@@ -15,10 +14,9 @@ use log::LevelFilter::Debug;
 use botd::BotDetector;
 use edge::EdgeDetect;
 use crate::config::{Config, APP_BACKEND_NAME, BOTD_BACKEND_NAME, CDN_BACKEND_NAME};
+use crate::utils::{is_static_requested, make_cookie, is_favicon_requested};
 use crate::detector::{Detect, ERROR};
 use crate::injector::inject_script;
-use crate::utils::{is_static_requested, make_cookie, is_favicon_requested};
-use crate::endpoint::BotdEndpoint;
 
 const PATH_HASH: &str = "2f70092c";
 
@@ -57,9 +55,8 @@ fn initial_request(mut req: Request, config: &Config) -> Result<Response, Error>
 }
 
 fn detect_request(req: Request) -> Result<Response, Error> {
-    let endpoint = BotdEndpoint::new("/detect");
     let mut response = req
-        .with_path(endpoint.path.as_str())
+        .with_path("/api/v1/detect")
         .send(BOTD_BACKEND_NAME)?;
     let resp_clone = response.clone_with_body();
     let body = response.into_body_str();
@@ -103,13 +100,7 @@ fn static_request(req: Request) -> Result<Response, Error> {
 fn non_static_request(mut req: Request, config: &Config) -> Result<Response, Error> {
     log::debug!("[main] Not static request => do bot detection");
     match BotDetector::make(&mut req, config) {
-        Ok(d) => {
-            Ok(req.send(APP_BACKEND_NAME)?)
-            // let response = req.send(APP_BACKEND_NAME)?;
-            // let cookie = make_cookie(String::from(REQUEST_ID_HEADER_COOKIE), d.request_id);
-            // log::debug!("[main] Set cookie to non-static response: {}", cookie);
-            // Ok(response.with_header(SET_COOKIE, cookie))
-        },
+        Ok(_) => Ok(req.send(APP_BACKEND_NAME)?),
         Err(e) => send_error(req, e.to_string(), None)
     }
 }
