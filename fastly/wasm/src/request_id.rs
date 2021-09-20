@@ -2,7 +2,7 @@ use fastly::{Request, Response};
 use BotdError::{NoRequestIdInCookie, NoRequestIdInHeaders, ToStringCast};
 use crate::REQUEST_ID_HEADER_COOKIE;
 use crate::error::BotdError;
-use fastly::http::header::{SET_COOKIE, COOKIE};
+use fastly::http::header::COOKIE;
 use cookie::Cookie;
 use fastly::http::HeaderValue;
 
@@ -72,18 +72,18 @@ impl RequestId {
         }
     }
 
-    fn from_resp_cookie(resp: &Response) -> Result<String, BotdError> {
-        match resp.get_header(SET_COOKIE) {
-            Some(r) => {
-                let cookies = Self::extract_from_header(r)?;
-                match find_in_cookie_str(cookies.as_str(), REQUEST_ID_HEADER_COOKIE) {
-                    Some(r) => Ok(r),
-                    _ => Err(NoRequestIdInCookie)
-                }
-            }
-            _ => Err(NoRequestIdInHeaders)
-        }
-    }
+    // fn from_resp_cookie(resp: &Response) -> Result<String, BotdError> {
+    //     match resp.get_header(SET_COOKIE) {
+    //         Some(r) => {
+    //             let cookies = Self::extract_from_header(r)?;
+    //             match find_in_cookie_str(cookies.as_str(), REQUEST_ID_HEADER_COOKIE) {
+    //                 Some(r) => Ok(r),
+    //                 _ => Err(NoRequestIdInCookie)
+    //             }
+    //         }
+    //         _ => Err(NoRequestIdInHeaders)
+    //     }
+    // }
 
     pub fn search_in_req(req: &mut Request) -> Option<String> {
         let in_cookie = Self::from_req_cookie(req).ok();
@@ -96,14 +96,14 @@ impl RequestId {
         else { None }
     }
 
-    pub fn search_in_resp(resp: &mut Response) -> Option<String> {
-        let in_cookie = Self::from_resp_cookie(resp).ok();
-        let in_header = Self::from_resp_header(resp).ok();
-        let in_body = Self::from_resp_body(resp.clone_with_body());
-
-        if in_cookie.is_some() { in_cookie }
-        else if in_header.is_some() { in_header }
-        else if in_body.is_some() { in_body }
-        else { None }
-    }
+    // pub fn search_in_resp(resp: &mut Response) -> Option<String> {
+    //     let in_cookie = Self::from_resp_cookie(resp).ok();
+    //     let in_header = Self::from_resp_header(resp).ok();
+    //     let in_body = Self::from_resp_body(resp.clone_with_body());
+    //
+    //     if in_cookie.is_some() { in_cookie }
+    //     else if in_header.is_some() { in_header }
+    //     else if in_body.is_some() { in_body }
+    //     else { None }
+    // }
 }

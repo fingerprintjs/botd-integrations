@@ -101,12 +101,12 @@ fn static_req_handler(req: Request) -> Result<Response, Error> {
     Ok(req.send(APP_BACKEND_NAME)?)
 }
 
-fn non_static_req_handler(req: Request, config: &Config) -> Result<Response, Error> {
+fn non_static_req_handler(mut req: Request, config: &Config) -> Result<Response, Error> {
     log::debug!("[main] Not static request => do bot detection");
-    let mut botd_req = req.clone_without_body();
-    match BotDetector::make(&mut botd_req, config) {
-        Ok(_) => Ok(botd_req.send(APP_BACKEND_NAME)?),
-        Err(e) => handle_error(req, e, Some(config), true)
+    let err_req = req.clone_without_body();
+    match BotDetector::make(&mut req, config) {
+        Ok(_) => Ok(req.send(APP_BACKEND_NAME)?),
+        Err(e) => handle_error(err_req, e, Some(config), true)
     }
 }
 
@@ -133,7 +133,7 @@ fn main(mut req: Request) -> Result<Response, Error> {
         p if p == format!("/{}/detect", PATH_HASH) => detect_req_handler(req, &config),
         p if p.starts_with(&format!("/{}/dist", PATH_HASH)) => dist_req_handler(req, &config),
         _ if is_favicon_requested(&req) => favicon_req_handler(req, &config),
-        _ if !is_static_requested(&req) => non_static_req_handler(req, &config),
-        _ => static_req_handler(req)
+        _ if is_static_requested(&req) => static_req_handler(req),
+        _ => non_static_req_handler(req, &config)
     };
 }
