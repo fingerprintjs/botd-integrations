@@ -2,7 +2,7 @@ use fastly::Request;
 use json::JsonValue;
 use crate::utils::get_timestamp_ms;
 use crate::config::{Config, BOTD_BACKEND_NAME};
-use crate::detector::{Detect, check_resp, transfer_headers};
+use crate::detector::{Detect, check_botd_resp, transfer_headers};
 use crate::request_id::RequestId;
 use crate::error::BotdError;
 use fastly::http::Method;
@@ -14,7 +14,7 @@ pub struct EdgeDetect {
 
 impl EdgeDetect {
     fn create_body(req: &Request) -> String {
-        let prev_req_id = RequestId::from_cookie(req).unwrap_or_default();
+        let prev_req_id = RequestId::from_req_cookie(req).unwrap_or_default();
         log::debug!("[edge] Previous request id: {}", prev_req_id);
         let headers_names = req.get_header_names_str();
         let mut headers_json = JsonValue::new_object();
@@ -48,8 +48,8 @@ impl Detect for EdgeDetect {
             Ok(r) => r,
             Err(e) => return Err(SendError(e.root_cause().to_string()))
         };
-        if let Err(err) = check_resp(&edge_resp) { return Err(err); }
-        let req_id = RequestId::from_header(&edge_resp)?;
+        check_botd_resp(&edge_resp)?;
+        let req_id = RequestId::from_resp_header(&edge_resp)?;
         transfer_headers(req, &edge_resp);
         Ok(EdgeDetect { req_id })
     }

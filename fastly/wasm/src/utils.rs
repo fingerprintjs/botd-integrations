@@ -1,8 +1,9 @@
 use fastly::Request;
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::convert::TryFrom;
-use fastly::http::header::{COOKIE};
 use cookie::{Cookie, SameSite};
+use std::net::{Ipv4Addr, IpAddr};
+use IpAddr::V4;
 
 pub fn get_timestamp_ms() -> i64 {
     let timestamp = match SystemTime::now().duration_since(UNIX_EPOCH) {
@@ -31,16 +32,11 @@ pub fn make_cookie(name: String, value: String) -> String {
         .to_string()
 }
 
-pub fn get_cookie(req: &Request, name: &str) -> Option<String> {
-    let cookies = req.get_header(COOKIE)?.to_str().ok()?.split(';');
-    for c in cookies {
-        if let Ok(cookie) = Cookie::parse(c) {
-            if cookie.name() == name {
-                return Some(String::from(cookie.value()));
-            }
-        }
-    }
-    None
+pub fn get_ip(req: &Request) -> String {
+    req
+        .get_client_ip_addr()
+        .unwrap_or(V4(Ipv4Addr::UNSPECIFIED))
+        .to_string()
 }
 
 pub fn is_static_requested(req: &Request) -> bool {

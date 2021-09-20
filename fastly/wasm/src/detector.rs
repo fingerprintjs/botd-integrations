@@ -33,7 +33,7 @@ pub fn transfer_headers(req: &mut Request, botd_resp: &Response) {
     }
 }
 
-pub fn check_resp(resp: &Response) -> Result<(), BotdError> {
+pub fn check_botd_resp(resp: &Response) -> Result<(), BotdError> {
     log::debug!("{:?}", resp.get_header_names_str());
     let req_status = match resp.get_header(REQUEST_STATUS_HEADER) {
         Some(r) => r,
