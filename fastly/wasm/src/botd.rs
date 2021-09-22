@@ -15,7 +15,7 @@ impl Detect for BotDetector {
         let req_id = RequestId::from_req_cookie(req)?;
         let query = format!("header&token={}&id={}", config.token.to_owned(), req_id);
         log::debug!("[botd] Make bot detect with request_id: {} and query: ?{}", req_id, query);
-        return match req
+        match req
             .clone_without_body()
             .with_method(Method::GET)
             .with_path("/api/v1/results")
@@ -26,7 +26,7 @@ impl Detect for BotDetector {
                 transfer_headers(req, &r);
                 Ok(BotDetector { req_id })
             }
-            Err(e) => return Err(SendError(e.root_cause().to_string()))
-        };
+            Err(e) => Err(SendError(e))
+        }
     }
 }

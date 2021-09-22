@@ -6,6 +6,7 @@ use json::JsonValue;
 use JsonValue::Null;
 use crate::request_id::RequestId;
 use fastly::http::Method;
+use fastly::http::request::SendError as FastlySendError;
 
 /// An error that occurred during bot detection
 pub enum BotdError {
@@ -26,7 +27,7 @@ pub enum BotdError {
     /// Can't cast to string.
     ToStringCast(String),
     /// Error during request sending.
-    SendError(String),
+    SendError(FastlySendError),
     /// Can't extract botd request status from headers.
     NoRequestIdInCookie,
 }
@@ -42,14 +43,14 @@ impl ToString for BotdError {
             BotdError::NoRequestStatusInHeaders => String::from("Request status cannot be found in headers"),
             BotdError::NoErrorDescriptionInHeaders => String::from("Request status is not processed, but error description cannot be found."),
             BotdError::ToStringCast(name) => format!("Can't cast {} to string", name),
-            BotdError::SendError(desc) => format!("Error occurred during sending to backend: {}", desc),
+            BotdError::SendError(e) => format!("Error occurred during sending to backend: {}", e.root_cause()),
             BotdError::NoRequestIdInCookie => String::from("Request id cannot be found in cookie"),
         }
     }
 }
 
 fn send_error_to_app(req: Request, err: &BotdError, req_id: Option<String>) -> Result<Response, Error> {
-    log::error!("[error] To application: {}", err.to_string());
+    log::error!("[error] To application: {}, {}", err.to_string(), req.get_method_str());
     Ok(req
         .with_header(REQUEST_ID_HEADER_COOKIE, req_id.unwrap_or_default())
         .with_header(REQUEST_STATUS_HEADER, "error")
@@ -84,6 +85,7 @@ pub fn handle_error(
     config: Option<&Config>,
     send_to_app: bool
 ) -> Result<Response, Error> {
+    log::error!("[error] Handled error");
     let req_id = RequestId::search_in_req(&mut req);
     let ip = get_ip(&req);
     let config = match config {
@@ -91,11 +93,11 @@ pub fn handle_error(
         _ => Null
     };
     let mut resp = None;
+    let botd_req = req.clone_without_body();
     if send_to_app {
-        let app_req = req.clone_with_body();
-        resp = Some(send_error_to_app(app_req, &err, req_id.to_owned())?);
+        resp = Some(send_error_to_app(req, &err, req_id.to_owned())?);
     }
-    let botd_resp = send_error_to_botd(req, config, ip, req_id, &err)?;
+    let botd_resp = send_error_to_botd(botd_req, config, ip, req_id, &err)?;
     match resp {
         Some(r) => Ok(r),
         _ => Ok(botd_resp)

@@ -46,10 +46,11 @@ impl Detect for EdgeDetect {
             .with_header("Auth-Token", config.token.to_owned())
             .send(BOTD_BACKEND_NAME) {
             Ok(r) => r,
-            Err(e) => return Err(SendError(e.root_cause().to_string()))
+            Err(e) => return Err(SendError(e))
         };
         check_botd_resp(&edge_resp)?;
         let req_id = RequestId::from_resp_header(&edge_resp)?;
+        log::debug!("[edge] Edge detect request id: {}", req_id);
         transfer_headers(req, &edge_resp);
         Ok(EdgeDetect { req_id })
     }
