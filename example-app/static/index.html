@@ -38,6 +38,11 @@
                 },
                 configurable: true,
             });
+          
+            console.log("UserAgent set to " + userAgent)
+          
+            // GetResults function is injected by the middleware integration
+            // For more info take a look at e.g. Fastly integration - https://github.com/fingerprintjs/botd-integrations/blob/main/fastly/wasm/src/injector.rs
             if (getResults) {
                 await getResults()
             }

@@ -1,44 +1,41 @@
-## Fastly WASM Botd integration
+# Fastly WASM Botd integration
+
+## Sample integration
+![image](https://user-images.githubusercontent.com/10922372/125807555-97e8b4a3-63e7-4a62-9784-e406044702f4.png)
+You can try running sample [Fastly Compute@Edge](https://docs.fastly.com/products/compute-at-edge) WASP integration at [https://botd-fingerprintjs.edgecompute.app](https://botd-fingerprintjs.edgecompute.app).
+
+Login: `human`, Password: `iamnotbot`
+
+## Setting up the integration with the pre-built package
+
+### Prerequisites
+- Fastly account with the Fastly Compute@Edge [feature flag](https://developer.fastly.com/learning/compute/#create-a-new-fastly-account-and-invite-your-collaborators) enabled.
 
 ### Setting up
-1. Go to [manage.fastly.com](https://manage.fastly.com/)
 
-2. Click `Create service`, then choose `WASM`
+1. Log in to [manage.fastly.com](https://manage.fastly.com/).
 
-3. Install the [Fastly CLI](https://github.com/fastly/cli)
+2. Click `Create service`, choose `WASM`, optionally rename service.
 
-4. Run `fastly compute init` and follow the prompts to create a project
+3. Go to the `Service configuration`, edit the `Domains` section and add a domain. For testing purposes, you can use `{some-name}.edgecompute.app` format. For more information, take a look at [Fastly documentation](https://developer.fastly.com/learning/concepts/routing-traffic-to-fastly/#computeedge).
 
-5. Download the source code from this repository and replace `src` folder in your local project
+4. Edit the `Origins` section.
+ 
+   4.1. Create a new host with the URL of the web application you want to protect, name it `Backend`. For demo purposes, you can also use our sample app with `botd-example-app.fpjs.sh` URL. Select correct TLS setting for your app (in most production cases preserve default `Yes, enable TLS and connect securely using port 443`, for our sample app switch to `No, do not enable TLS. Instead connect using port 80`). Update settings.
 
-6. Edit `Domains`
+   4.2. Create a new host with the URL of the botd API - `botd.fpapi.io`, name it `Botd`. Stick with the default `Yes, enable TLS and connect securely using port 443` settings.
 
-7. Edit `Health checks`
+5. Download the `fpjs-wasm-integration.tar.gz` package from the [releases](https://github.com/fingerprintjs/botd-integrations/releases) and upload it to the `Package` section.
 
-8. Edit `Hosts`
+6. Go to the `Dictionaries` section, create a new `config` dictionary.
 
-   8.1. Create origin host, name should be `Backend`
+   6.1. Add item `app_backend_url` with URL to origin - the same as in the host step but with protocol. You can use our sample origin URL `http://botd-example-app.fpjs.sh`
 
-   8.2. Create Bot Detection API host, name should be `Botd`, url is `botd.fpapi.io`
+   6.2. Add item `botd_token` with authorization token obtained from [FingerprintJS](https://fingerprintjs.com/).
+ 
+7. Activate integration.
 
-9. Edit `Dictionaries`
+10. Test your app on the provided `Domain` with the given sample credentials.
 
-   9.1. Create `config` dictionary
-
-   9.2. Add item `app_backend_url` with url to origin (e.x. `http://botd-example-app.fpjs.sh`)
-
-   9.3. Add item `botd_token` with authorization token
-
-   9.4. **[OPTIONAL]** Add item `botd_url` with url to Bot Detection API (default `https://botd.fpapi.io/`)
-
-   9.5. **[OPTIONAL]** Add item `env` - environment name for logging (default `Middleware`)
-
-10. Edit `Logging`
-
-11. Run `fastly compute publish --service-id={serviceId}`
-
-### Development
-
-Building an application: `fastly compute build`
-
-Deploying an application: `fastly compute deploy -s {serviceId}`
+## Setting up with the source code
+If you want to build and release integration from source code, [follow the wiki guidelines](https://github.com/fingerprintjs/botd-integrations/wiki/Setting-up-Fastly-WASM-integration-from-source-code).
