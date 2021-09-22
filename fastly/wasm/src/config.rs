@@ -1,43 +1,52 @@
-use fastly::{Dictionary, Error};
-use crate::constants::{BOTD_URL, ENV_DEFAULT};
+use crate::error::BotdError;
+use fastly::Dictionary;
+use BotdError::{Disabled, NoTokenInConfig};
+use json::JsonValue;
+use log::LevelFilter::Debug;
+
+/// This should match the name of your storage backend. See the the `Hosts` section of
+/// the Fastly WASM service UI for more information.
+pub const APP_BACKEND_NAME: &str = "backend";
+pub const BOTD_BACKEND_NAME: &str = "botd";
+pub const CDN_BACKEND_NAME: &str = "cdn";
 
 pub struct Config {
-    pub env: String,
-    pub botd_token: String,
-    pub botd_url: String,
-    pub app_backend_url: String,
+    pub token: String,
+    // Needs for CORS
+    pub app_host: Option<String>,
 }
 
-fn get_variable(name: &str, dictionary: &Dictionary) -> String {
-    let option = dictionary.get(name);
-    if option.is_none() {
-        let msg = name.to_owned() + " cannot be extracted from config";
-        log::error!("{}", msg.to_owned());
-        panic!(msg)
+impl Config {
+    pub fn new() -> Result<Self, BotdError> {
+        const DEFAULT_LOG_ENDPOINT: &str = "default";
+        const CONFIG_DICT_NAME: &str = "botd_config";
+        const CONFIG_TOKEN: &str = "token";
+        const CONFIG_LOG_ENDPOINT: &str = "log_endpoint";
+        const CONFIG_DISABLE: &str = "disable";
+        const CONFIG_APP_HOST: &str = "app_host";
+
+        let dictionary = Dictionary::open(CONFIG_DICT_NAME);
+
+        let log_endpoint_name_default = || String::from(DEFAULT_LOG_ENDPOINT);
+        let log_endpoint_name = dictionary.get(CONFIG_LOG_ENDPOINT).unwrap_or_else(log_endpoint_name_default);
+        log_fastly::init_simple(log_endpoint_name, Debug);
+
+        if let Some(d) = dictionary.get(CONFIG_DISABLE) {
+            if d == true.to_string() { return Err(Disabled); }
+        }
+        let token = match dictionary.get(CONFIG_TOKEN) {
+            Some(t) => t,
+            _ => return Err(NoTokenInConfig)
+        };
+        let app_host = dictionary.get(CONFIG_APP_HOST);
+
+        Ok(Config { token, app_host })
     }
-    return option.unwrap();
-}
 
-fn remove_last_slash(src: String) -> String {
-    if src.chars().last() == Some('/') {
-        return String::from(&src[..src.len() - 1]);
+    pub fn json(&self) -> JsonValue {
+        let mut json = JsonValue::new_object();
+        json["token"] = self.token.to_owned().into();
+        json["app_host"] = self.app_host.to_owned().into();
+        json
     }
-    return src
-}
-
-fn get_variable_or_default(name: &str, default: &str, dictionary: &Dictionary) -> String {
-    let option = dictionary.get(name);
-    if option.is_none() {
-        return default.to_string()
-    }
-    return option.unwrap();
-}
-
-pub fn read_config() -> Result<Config, Error> {
-    let dictionary = Dictionary::open("config");
-    let env = get_variable_or_default("env", ENV_DEFAULT, &dictionary);
-    let botd_token = get_variable("botd_token", &dictionary);
-    let botd_url = remove_last_slash(get_variable_or_default("botd_url", BOTD_URL, &dictionary));
-    let app_backend_url = remove_last_slash(get_variable("app_backend_url", &dictionary));
-    return Result::Ok(Config{env, botd_token, botd_url, app_backend_url})
 }

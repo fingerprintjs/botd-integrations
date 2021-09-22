@@ -1,39 +1,22 @@
 use regex::Regex;
+use crate::PATH_HASH;
 use crate::config::Config;
-use crate::constants::BOTD_DEFAULT_PATH;
+use crate::error::BotdError;
+use BotdError::{RegexSyntax, WrongHTML};
 
-fn get_script(token: String, endpoint: String) -> String {
-    const SCRIPT_BODY_BEGIN: &str = r#"
-    <script>
-        async function getResults() {
-            const botdPromise = Botd.load({
-            token: ""#;
-    const SCRIPT_BODY_MIDDLE: &str = r#"",
-            mode: "requestId",
-            endpoint: ""#;
-    const SCRIPT_BODY_END: &str = r#"",
-        })
-        const botd = await botdPromise
-        const result = await botd.detect("Fastly")
+pub fn inject_script(html: &str, config: &Config) -> Result<String, BotdError> {
+    log::debug!("[inject] Inject script with token: {}", config.token);
+    let script = format!("
+    <script>function getResults(){{Botd.load({{token:\"{}\",endpoint:\"{}\",isIntegration:true}}).then(b=>{{return b.detect()}})}}</script>
+    <script src=\"/{}/dist/npm/@fpjs-incubator/botd-agent@0.1.18-beta.1/dist/botd.js\" onload=\"getResults()\"></script>", config.token, PATH_HASH, PATH_HASH);
+    let mut result = html.to_owned();
+    let re = r"(<head.*>)";
+    if let Ok(r) = Regex::new(re) {
+        if let Some(m) = r.find(html) {
+            result.insert_str(m.end(), script.as_str());
+            return Ok(result)
         }
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/@fpjs-incubator/botd-agent@0/dist/botd.min.js" onload="getResults()"></script>
-    "#;
-    return format!("{}{}{}{}{}", SCRIPT_BODY_BEGIN, token, SCRIPT_BODY_MIDDLE, endpoint, SCRIPT_BODY_END)
-}
-
-pub fn add_bot_detection_script(html: Box<str>, config: &Config) -> String {
-    let mut injected_html = String::from(html);
-
-    let endpoint = format!("{}{}", config.botd_url, BOTD_DEFAULT_PATH);
-    let script = get_script(config.botd_token.to_owned(), endpoint.to_owned());
-
-    log::debug!("[add_bot_detection_script] token: {}, endpoint: {}", config.botd_token, endpoint);
-
-    let head_regex = Regex::new(r"(<head.*>)").unwrap();
-    let script_index = head_regex.find(&*injected_html).unwrap().end();
-
-    injected_html.insert_str(script_index, &script);
-
-    return injected_html;
+        return Err(WrongHTML)
+    }
+    Err(RegexSyntax(String::from(re)))
 }

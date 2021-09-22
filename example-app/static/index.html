@@ -12,39 +12,40 @@
         <img src='img/logo.svg' alt='FingerprintJS'>
     </a>
     <h1>FingerprintJS BotD Example App</h1>
-    <form class="form" id="login_form" method="post" action="/login" >
+    <form class="form" id="login_form" method="post" action="/login">
         <label><input name="login" id="login" type="text" placeholder="Login"></label>
-        <label><input name="password" id="password" type="password" placeholder="Password"></label>
-        <label class="checkbox"><input type="checkbox" id="bot" name="bot">Emulate bot</label>
-        <input type="submit" onclick="onClick(event)">
+        <label><input name="password" id="password" type="password" placeholder="Password" autocomplete="on"></label>
+        <label class="checkbox"><input type="checkbox" id="bot" name="bot" onchange="emulateBot()">Emulate bot</label>
+        <input type="submit">
     </form>
     <script>
-        async function onClick(event) {
-            event.preventDefault()
-            if (localStorage.getItem("fpjs-real-user-agent") === null) {
-                localStorage.setItem("fpjs-real-user-agent", window.navigator.userAgent)
+        if (localStorage.getItem("fpjs-real-user-agent") === null) {
+            localStorage.setItem("fpjs-real-user-agent", window.navigator.userAgent)
+        }
+
+        async function emulateBot() {
+            let userAgent;
+            if (document.getElementById('bot').checked) {
+                userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/90.0.4430.93 Safari/537.36";
+                console.log("Set custom user agent from headless browser")
+            } else {
+                userAgent = localStorage.getItem("fpjs-real-user-agent")
+                console.log("Set real user agent")
             }
-
-            const userAgent = document.getElementById('bot').checked ?
-                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/90.0.4430.93 Safari/537.36" :
-                localStorage.getItem("fpjs-real-user-agent");
-
             Object.defineProperty(navigator, 'userAgent', {
                 get: function () {
                     return userAgent;
                 },
                 configurable: true,
             });
-
+          
             console.log("UserAgent set to " + userAgent)
-            
+          
             // GetResults function is injected by the middleware integration
             // For more info take a look at e.g. Fastly integration - https://github.com/fingerprintjs/botd-integrations/blob/main/fastly/wasm/src/injector.rs
-            if (window.getResults) {
+            if (getResults) {
                 await getResults()
             }
-
-            document.querySelector("#login_form").submit()
         }
     </script>
 </div>

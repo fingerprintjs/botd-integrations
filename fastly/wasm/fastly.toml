@@ -2,7 +2,20 @@
 # https://developer.fastly.com/reference/fastly-toml/
 
 authors = ["FingerprintJS"]
-description = "Get to know the Fastly Compute@Edge environment with a basic starter kit that demonstrates routing, simple synthetic responses and overriding caching rules."
+description = "FingerprintJS Botd integration with Fastly"
 language = "rust"
 manifest_version = 1
 name = "fpjs-wasm-integration"
+
+[setup]
+    [[setup.backends]]
+    address = "botd.fpapi.io"
+    name = "botd"
+    port = 443
+    prompt = "Botd backend"
+
+    [[setup.backends]]
+    address = "script-proxy.edgecompute.app"
+    name = "cdn"
+    port = 443
+    prompt = "CDN"
