@@ -1,7 +1,7 @@
 [package]
-name = "compute-starter-kit-rust-default"
-version = "0.1.0"
-authors = []
+name = "botd-compute-edge"
+version = "0.2.0"
+authors = ["FingerprintJS"]
 edition = "2018"
 
 [profile.release]

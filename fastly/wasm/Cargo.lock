@@ -86,6 +86,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "botd-compute-edge"
+version = "0.2.0"
+dependencies = [
+ "backtrace",
+ "chrono",
+ "cookie",
+ "env_logger",
+ "fastly",
+ "json",
+ "log",
+ "log-fastly",
+ "regex",
+]
+
+[[package]]
 name = "bumpalo"
 version = "3.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -132,21 +147,6 @@ dependencies = [
  "num-traits",
  "time 0.1.44",
  "winapi",
-]
-
-[[package]]
-name = "compute-starter-kit-rust-default"
-version = "0.1.0"
-dependencies = [
- "backtrace",
- "chrono",
- "cookie",
- "env_logger",
- "fastly",
- "json",
- "log",
- "log-fastly",
- "regex",
 ]
 
 [[package]]

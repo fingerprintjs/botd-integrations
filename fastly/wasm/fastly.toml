@@ -5,7 +5,7 @@ authors = ["FingerprintJS"]
 description = "FingerprintJS Botd integration with Fastly"
 language = "rust"
 manifest_version = 1
-name = "fpjs-wasm-integration"
+name = "botd-compute-edge"
 
 [setup]
     [[setup.backends]]
