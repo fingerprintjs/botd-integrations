@@ -9,6 +9,7 @@ mod edge;
 
 use fastly::{Error, Request, Response};
 use fastly::http::header;
+use backtrace::Backtrace;
 use header::HOST;
 use header::SET_COOKIE;
 use botd::BotDetector;
@@ -32,6 +33,7 @@ pub const ERROR_DESCRIPTION_HEADER: &str = "botd-error-description";
 fn init_req_handler(mut req: Request, config: &Config) -> Result<Response, Error> {
     log::debug!("[main] Initial request, starting edge detect");
     let mut req_with_botd_headers = req.clone_with_body();
+    req_with_botd_headers.remove_header(ACCEPT_ENCODING);
     let edge = match EdgeDetect::make(&mut req_with_botd_headers, config) {
         Ok(d) => d,
         Err(e) => return handle_error(req, e, Some(config), true)
@@ -111,7 +113,8 @@ fn non_static_req_handler(mut req: Request, config: &Config) -> Result<Response,
 #[fastly::main]
 fn main(mut req: Request) -> Result<Response, Error> {
     panic::set_hook(Box::new(|e| {
-        log::debug!("[main] Panic hook: {}", e.to_string());
+        let trace = Backtrace::new();
+        log::debug!("[main] Panic hook: {}, {:?}", e.to_string(), trace);
     }));
 
     // TODO: get rid of it
