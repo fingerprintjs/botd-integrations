@@ -20,6 +20,8 @@ use crate::detector::Detect;
 use crate::injector::inject_script;
 use crate::request_id::RequestId;
 use crate::error::{handle_error, BotdError};
+use fastly::http::header::ACCEPT_ENCODING;
+use std::panic;
 
 const PATH_HASH: &str = "2f70092c";
 
@@ -51,12 +53,12 @@ fn init_req_handler(mut req: Request, config: &Config) -> Result<Response, Error
 }
 
 fn detect_req_handler(req: Request, config: &Config) -> Result<Response, Error> {
-    let req_clone = req.clone_without_body();
+    let err_req = req.clone_without_body();
     let mut botd_resp = match req
         .with_path("/api/v1/detect")
         .send(BOTD_BACKEND_NAME) {
         Ok(r) => r,
-        Err(e) => return handle_error(req_clone, SendError(e.root_cause().to_string()), Some(config), false)
+        Err(e) => return handle_error(err_req, SendError(e), Some(config), false)
     };
     let botd_resp_clone = botd_resp.clone_with_body();
     let req_id = RequestId::from_resp_body(botd_resp_clone).unwrap_or_default();
@@ -65,20 +67,16 @@ fn detect_req_handler(req: Request, config: &Config) -> Result<Response, Error> 
     Ok(botd_resp.with_header(SET_COOKIE, cookie))
 }
 
-fn dist_req_handler(req: Request, config: &Config) -> Result<Response, Error> {
-    let path_req = req.clone_without_body();
-    // let cut_version_path = |p: &str| &p[format!("/{}/detect", PATH_HASH).len()..p.len()];
-
-    let path = path_req.get_path();
-    let cdn_path = &path[format!("/{}/dist", PATH_HASH).len()..path.len()];
-    log::debug!("[dist] CDN path: {}", cdn_path);
+fn dist_req_handler(req: Request, config: &Config, cdn_path: &str) -> Result<Response, Error> {
     let err_req = req.clone_without_body();
     match req
         .with_path(cdn_path)
         .with_pass(false)
         .send(CDN_BACKEND_NAME) {
         Ok(r) => Ok(r),
-        Err(e) => handle_error(err_req, SendError(e.root_cause().to_string()), Some(config), false)
+        Err(e) => {
+            handle_error(err_req, SendError(e), Some(config), false)
+        }
     }
 }
 
@@ -103,15 +101,19 @@ fn static_req_handler(req: Request) -> Result<Response, Error> {
 
 fn non_static_req_handler(mut req: Request, config: &Config) -> Result<Response, Error> {
     log::debug!("[main] Not static request => do bot detection");
-    let err_req = req.clone_without_body();
-    match BotDetector::make(&mut req, config) {
-        Ok(_) => Ok(req.send(APP_BACKEND_NAME)?),
-        Err(e) => handle_error(err_req, e, Some(config), true)
-    }
+    if let Err(e) = BotDetector::make(&mut req, config) {
+        let err_req = req.clone_with_body();
+        return handle_error(err_req, e, Some(config), true);
+    };
+    Ok(req.send(APP_BACKEND_NAME)?)
 }
 
 #[fastly::main]
 fn main(mut req: Request) -> Result<Response, Error> {
+    panic::set_hook(Box::new(|e| {
+        log::debug!("[main] Panic hook: {}", e.to_string());
+    }));
+
     // TODO: get rid of it
     req.set_pass(true);
 
@@ -128,10 +130,17 @@ fn main(mut req: Request) -> Result<Response, Error> {
         req.set_header(HOST, h);
     }
 
+    let dist_path = format!("/{}/dist", PATH_HASH);
+
     return match req.get_path() {
         "/" => init_req_handler(req, &config),
         p if p == format!("/{}/detect", PATH_HASH) => detect_req_handler(req, &config),
-        p if p.starts_with(&format!("/{}/dist", PATH_HASH)) => dist_req_handler(req, &config),
+        p if p.starts_with(dist_path.as_str()) => {
+            let path = p.to_owned();
+            let cdn_path = &path[dist_path.len()..];
+            log::debug!("[main] CDN path: {}", cdn_path);
+            dist_req_handler(req, &config, cdn_path)
+        },
         _ if is_favicon_requested(&req) => favicon_req_handler(req, &config),
         _ if is_static_requested(&req) => static_req_handler(req),
         _ => non_static_req_handler(req, &config)
