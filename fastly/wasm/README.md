@@ -21,21 +21,25 @@ Login: `human`, Password: `iamnotbot`
 
 4. Edit the `Origins` section.
  
-   4.1. Create a new host with the URL of the web application you want to protect, name it `Backend`. For demo purposes, you can also use our sample app with `botd-example-app.fpjs.sh` URL. Select correct TLS setting for your app (in most production cases preserve default `Yes, enable TLS and connect securely using port 443`, for our sample app switch to `No, do not enable TLS. Instead connect using port 80`). Update settings.
+   4.1. Create a new host with the URL of the web application you want to protect, name it `backend`. For demo purposes, you can also use our sample app with `botd-example-app.fpjs.sh` URL. Select correct TLS setting for your app (in most production cases preserve default `Yes, enable TLS and connect securely using port 443`, for our sample app switch to `No, do not enable TLS. Instead connect using port 80`). Update settings.
 
-   4.2. Create a new host with the URL of the botd API - `botd.fpapi.io`, name it `Botd`. Stick with the default `Yes, enable TLS and connect securely using port 443` settings.
+   4.2. Create a new host with the URL of the botd API - `botd.fpapi.io`, name it `botd`. Stick with the default `Yes, enable TLS and connect securely using port 443` settings.
 
-5. Download the `fpjs-wasm-integration.tar.gz` package from the [releases](https://github.com/fingerprintjs/botd-integrations/releases) and upload it to the `Package` section.
+   4.3. Create a new host with the URL of the CDN - `script-proxy.edgecompute.app`, name it `cdn`. Stick with the default `Yes, enable TLS and connect securely using port 443` settings.
 
-6. Go to the `Dictionaries` section, create a new `config` dictionary.
+5. Download the `botd-compute-edge-<version>.tar.gz` package from the [releases](https://github.com/fingerprintjs/botd-integrations/releases) and upload it to the `Package` section.
 
-   6.1. Add item `app_backend_url` with URL to origin - the same as in the host step but with protocol. You can use our sample origin URL `http://botd-example-app.fpjs.sh`
+6. Go to the `Dictionaries` section, create a new `botd_config` dictionary.
 
-   6.2. Add item `botd_token` with authorization token obtained from [FingerprintJS](https://fingerprintjs.com/).
+   6.1. Add item `token` with authorization token obtained from [FingerprintJS](https://fingerprintjs.com/).
+
+   6.2. **[OPTIONAL]** Add item `app_host` with host to origin. You can use our sample host `botd-example-app.fpjs.sh`. We set this value to `HOST` header in each request for bypassing CORS-policy.
+
+   6.3. **[OPTIONAL]** Add item `log_endpoint` with logging endpoint name from `Logging` section.
  
-7. Activate integration.
+8. Activate integration.
 
-10. Test your app on the provided `Domain` with the given sample credentials.
+9. Test your app on the provided `Domain` with the given sample credentials.
 
 ## Setting up with the source code
 If you want to build and release integration from source code, [follow the wiki guidelines](https://github.com/fingerprintjs/botd-integrations/wiki/Setting-up-Fastly-WASM-integration-from-source-code).
