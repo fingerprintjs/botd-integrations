@@ -86,12 +86,7 @@ fn favicon_req_handler(req: Request, config: &Config) -> Result<Response, Error>
     log::debug!("[main] Favicon request => starting edge detect");
     let mut req_with_edge_headers = req.clone_without_body();
     return match EdgeDetect::make(&mut req_with_edge_headers, config) {
-        Ok(d) => {
-            let response = req.send(APP_BACKEND_NAME)?;
-            let cookie = make_cookie(String::from(REQUEST_ID_HEADER_COOKIE), d.req_id);
-            log::debug!("[main] Set cookie to favicon response: {}", cookie);
-            Ok(response.with_header(SET_COOKIE, cookie))
-        }
+        Ok(_) => Ok(req.send(APP_BACKEND_NAME)?),
         Err(e) => handle_error(req, e, Some(config), true)
     };
 }
