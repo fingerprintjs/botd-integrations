@@ -4,6 +4,7 @@ use std::convert::TryFrom;
 use cookie::{Cookie, SameSite};
 use std::net::{Ipv4Addr, IpAddr};
 use IpAddr::V4;
+use psl::{Psl, List};
 
 pub fn get_timestamp_ms() -> i64 {
     let timestamp = match SystemTime::now().duration_since(UNIX_EPOCH) {
@@ -22,14 +23,28 @@ pub fn get_timestamp_ms() -> i64 {
     };
 }
 
-pub fn make_cookie(name: String, value: String) -> String {
-    Cookie::build(name, value)
+pub fn make_cookie(name: &str, value: String, domain: Option<String>) -> String {
+    let mut cookie = Cookie::build(name, value)
         .path("/")
         .secure(true)
         .http_only(true)
         .same_site(SameSite::None)
-        .finish()
-        .to_string()
+        .finish();
+    if let Some(d) = domain {
+        log::debug!("[cookie] Cookie domain set to: {}", d);
+        cookie.set_domain(d);
+    }
+    cookie.to_string()
+}
+
+pub fn get_domain(req: &Request) -> Option<String> {
+    if let Some(h) = req.get_url().host() {
+        let host = h.to_string();
+        let domain = List.domain(host.as_bytes())?;
+        let result = std::str::from_utf8(domain.as_bytes()).ok()?;
+        Some(String::from(result))
+    }
+    None
 }
 
 pub fn get_ip(req: &Request) -> String {
