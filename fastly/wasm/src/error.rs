@@ -7,6 +7,8 @@ use JsonValue::Null;
 use crate::request_id::RequestId;
 use fastly::http::Method;
 use fastly::http::request::SendError as FastlySendError;
+use backtrace::Backtrace;
+use std::panic::PanicInfo;
 
 /// An error that occurred during bot detection
 pub enum BotdError {
@@ -102,4 +104,11 @@ pub fn handle_error(
         Some(r) => Ok(r),
         _ => Ok(botd_resp)
     }
+}
+
+pub fn panic_hook() -> Box<dyn Fn(&PanicInfo<'_>) + 'static + Sync + Send> {
+    Box::new(|e| {
+        let trace = Backtrace::new();
+        log::debug!("[main] Panic hook: {}, {:?}", e.to_string(), trace);
+    })
 }

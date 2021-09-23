@@ -9,18 +9,17 @@ mod edge;
 
 use fastly::{Error, Request, Response};
 use fastly::http::header;
-use backtrace::Backtrace;
 use header::HOST;
 use header::SET_COOKIE;
 use botd::BotDetector;
 use edge::EdgeDetect;
 use BotdError::SendError;
 use crate::config::{Config, APP_BACKEND_NAME, BOTD_BACKEND_NAME, CDN_BACKEND_NAME};
-use crate::utils::{is_static_requested, make_cookie, is_favicon_requested, get_ip, get_domain};
+use crate::utils::{is_static_requested, make_cookie, is_favicon_requested, get_ip, get_e_tld_plus_one, get_host};
 use crate::detector::Detect;
 use crate::injector::inject_script;
 use crate::request_id::RequestId;
-use crate::error::{handle_error, BotdError};
+use crate::error::{handle_error, BotdError, panic_hook};
 use fastly::http::header::ACCEPT_ENCODING;
 use std::panic;
 
@@ -32,7 +31,7 @@ pub const ERROR_DESCRIPTION_HEADER: &str = "botd-error-description";
 
 fn init_req_handler(mut req: Request, config: &Config) -> Result<Response, Error> {
     log::debug!("[main] Initial request, starting edge detect");
-    let domain = get_domain(&req);
+    let domain = get_e_tld_plus_one(&req);
     let mut req_with_botd_headers = req.clone_with_body();
     req_with_botd_headers.remove_header(ACCEPT_ENCODING);
     let req_id = match EdgeDetect::make(&mut req_with_botd_headers, config) {
@@ -56,7 +55,7 @@ fn init_req_handler(mut req: Request, config: &Config) -> Result<Response, Error
 }
 
 fn detect_req_handler(req: Request, config: &Config) -> Result<Response, Error> {
-    let domain = get_domain(&req);
+    let domain = get_e_tld_plus_one(&req);
     let err_req = req.clone_without_body();
     let mut botd_resp = match req
         .with_path("/api/v1/detect")
@@ -77,10 +76,11 @@ fn dist_req_handler(req: Request, config: &Config, cdn_path: &str) -> Result<Res
         .with_path(cdn_path)
         .with_pass(false)
         .send(CDN_BACKEND_NAME) {
-        Ok(r) => Ok(r),
-        Err(e) => {
-            handle_error(err_req, SendError(e), Some(config), false)
-        }
+        Ok(r) => {
+            log::debug!("{:?}, {}", r.get_header_names_str(), r.get_status());
+            Ok(r)
+        },
+        Err(e) => handle_error(err_req, SendError(e), Some(config), false)
     }
 }
 
@@ -109,10 +109,7 @@ fn non_static_req_handler(mut req: Request, config: &Config) -> Result<Response,
 
 #[fastly::main]
 fn main(mut req: Request) -> Result<Response, Error> {
-    panic::set_hook(Box::new(|e| {
-        let trace = Backtrace::new();
-        log::debug!("[main] Panic hook: {}, {:?}", e.to_string(), trace);
-    }));
+    panic::set_hook(panic_hook());
 
     // TODO: get rid of it
     req.set_pass(true);
@@ -125,8 +122,7 @@ fn main(mut req: Request) -> Result<Response, Error> {
     log::debug!("[main] New request {}, ip address: {}", req.get_url_str(), get_ip(&req));
 
     // Set HOST header for CORS policy
-    if let Some(h) = config.app_host.to_owned() {
-        log::debug!("[main] Set header host: {}", h);
+    if let Some(h) = get_host(&req) {
         req.set_header(HOST, h);
     }
 

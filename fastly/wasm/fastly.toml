@@ -7,14 +7,41 @@ language = "rust"
 manifest_version = 1
 name = "botd-compute-edge"
 
+[local_server]
+
+  [local_server.backends]
+
+    [local_server.backends.backend]
+      override_host = "botd-example-app.fpjs.sh"
+      url = "http://botd-example-app.fpjs.sh/"
+
+    [local_server.backends.botd]
+      override_host = "botd.fpapi.io"
+      url = "https://botd.fpapi.io/"
+
+    [local_server.backends.cdn]
+      override_host = "script-proxy.edgecompute.app"
+      url = "https://script-proxy.edgecompute.app/"
+
+    [local_server.dictionaries.botd_config]
+      file = "botd_config.json"
+      format = "json"
+
 [setup]
-    [[setup.backends]]
+
+  [[setup.backends]]
+    address = "botd-example-app.fpjs.sh"
+    name = "backend"
+    port = 80
+    prompt = "Application backend"
+
+  [[setup.backends]]
     address = "botd.fpapi.io"
     name = "botd"
     port = 443
     prompt = "Botd backend"
 
-    [[setup.backends]]
+  [[setup.backends]]
     address = "script-proxy.edgecompute.app"
     name = "cdn"
     port = 443

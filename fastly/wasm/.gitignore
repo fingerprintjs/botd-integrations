@@ -3,4 +3,4 @@
 **/*.sh
 /bin
 /pkg
-node_modules
+botd_config.json

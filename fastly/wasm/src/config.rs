@@ -12,8 +12,6 @@ pub const CDN_BACKEND_NAME: &str = "cdn";
 
 pub struct Config {
     pub token: String,
-    // Needs for CORS
-    pub app_host: Option<String>,
 }
 
 impl Config {
@@ -23,7 +21,6 @@ impl Config {
         const CONFIG_TOKEN: &str = "token";
         const CONFIG_LOG_ENDPOINT: &str = "log_endpoint";
         const CONFIG_DISABLE: &str = "disable";
-        const CONFIG_APP_HOST: &str = "app_host";
 
         let dictionary = Dictionary::open(CONFIG_DICT_NAME);
 
@@ -38,15 +35,13 @@ impl Config {
             Some(t) => t,
             _ => return Err(NoTokenInConfig)
         };
-        let app_host = dictionary.get(CONFIG_APP_HOST);
 
-        Ok(Config { token, app_host })
+        Ok(Config { token })
     }
 
     pub fn json(&self) -> JsonValue {
         let mut json = JsonValue::new_object();
         json["token"] = self.token.to_owned().into();
-        json["app_host"] = self.app_host.to_owned().into();
         json
     }
 }

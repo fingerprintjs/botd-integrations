@@ -5,6 +5,7 @@ use cookie::{Cookie, SameSite};
 use std::net::{Ipv4Addr, IpAddr};
 use IpAddr::V4;
 use psl::{Psl, List};
+use std::str::FromStr;
 
 pub fn get_timestamp_ms() -> i64 {
     let timestamp = match SystemTime::now().duration_since(UNIX_EPOCH) {
@@ -37,14 +38,26 @@ pub fn make_cookie(name: &str, value: String, domain: Option<String>) -> String 
     cookie.to_string()
 }
 
-pub fn get_domain(req: &Request) -> Option<String> {
-    if let Some(h) = req.get_url().host() {
-        let host = h.to_string();
-        let domain = List.domain(host.as_bytes())?;
-        let result = std::str::from_utf8(domain.as_bytes()).ok()?;
-        Some(String::from(result))
+pub fn get_e_tld_plus_one(req: &Request) -> Option<String> {
+    let host = get_host(req)?;
+    let is_ip = is_ip(host.to_owned());
+    if is_ip {
+        log::debug!("[domain] Host: {}, is ip address", host);
+        return None;
     }
-    None
+    log::debug!("[domain] Host: {}, is not ip address", host);
+    let domain = List.domain(host.as_bytes())?;
+    let result = std::str::from_utf8(domain.as_bytes()).ok()?;
+    log::debug!("[domain] eTLD+1: {}", result);
+    Some(String::from(result))
+}
+
+pub fn get_host(req: &Request) -> Option<String> {
+    Some(req.get_url().host()?.to_string())
+}
+
+pub fn is_ip(ip_str: String) -> bool {
+    IpAddr::from_str(ip_str.as_str()).is_ok()
 }
 
 pub fn get_ip(req: &Request) -> String {
