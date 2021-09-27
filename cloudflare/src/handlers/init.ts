@@ -1,4 +1,4 @@
-import { makeLightDetect, transferLightHeaders } from '../detectors/light'
+import { makeEdgeDetect, transferEdgeHeaders } from '../detectors/edge'
 import { injectScript } from '../injector'
 import { changeURL, setErrorHeaders } from '../utils'
 import { getConfig } from '../config'
@@ -8,10 +8,10 @@ export default async function handleInitRequest(request: Request): Promise<Respo
     console.log(`[handleInitRequest] Request URL: ${request.url}, Method: ${request.method}`)
 
     const config = await getConfig(request)
-    const lightDetectResponse = await makeLightDetect(request, config)
+    const edgeDetectResponse = await makeEdgeDetect(request, config)
 
     request = changeURL(config.originURL, request)
-    transferLightHeaders(lightDetectResponse, request)
+    transferEdgeHeaders(edgeDetectResponse, request)
 
     const response = await fetch(request)
     console.log(`[handleInitRequest] Origin response - Status: ${response.status}`)

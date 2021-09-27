@@ -1,7 +1,7 @@
 export const BOTD_DEFAULT_URL = 'https://botd.fpapi.io'
 export const BOTD_DEFAULT_PATH = '/api/v1/'
 export const BOTD_RESULT_PATH = '/api/v1/results'
-export const BOTD_LIGHT_PATH = '/api/v1/light'
+export const BOTD_EDGE_PATH = '/api/v1/edge'
 
 export const enum Status {
   PROCESSED = 'processed',
@@ -48,7 +48,7 @@ export const RESULT_HEADERS = [
   BROWSER_SPOOFING_TYPE_HEADER,
 ]
 
-export const LIGHT_RESULT_HEADERS = [
+export const EDGE_RESULT_HEADERS = [
   REQUEST_ID_HEADER,
   REQUEST_STATUS_HEADER,
   AUTO_TOOL_STATUS_HEADER,

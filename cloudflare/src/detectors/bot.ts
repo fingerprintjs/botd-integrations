@@ -45,7 +45,7 @@ export async function makeBotDetect(request: Request, config: Config): Promise<R
     const botRequest = new Request(url.toString(), { method: GET })
     return await fetch(botRequest)
   } catch (e) {
-    console.error(`[requestLightDetect] Error handled: ${e.message}`)
+    console.error(`[requestEdgeDetect] Error handled: ${e.message}`)
     throw Error(`Error during bot detection: ${e.message}`)
   }
 }

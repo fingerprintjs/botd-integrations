@@ -1,7 +1,7 @@
 import { getConfig } from '../config'
 import { makeBotDetect, transferBotdHeaders } from '../detectors/bot'
 import { changeURL, isRequestFavicon, isRequestStatic, setErrorHeaders } from '../utils'
-import { makeLightDetect, transferLightHeaders } from '../detectors/light'
+import { makeEdgeDetect, transferEdgeHeaders } from '../detectors/edge'
 
 export default async function handleAll(request: Request): Promise<Response> {
   try {
@@ -10,11 +10,11 @@ export default async function handleAll(request: Request): Promise<Response> {
 
     if (isRequestStatic(request)) {
       if (isRequestFavicon(request)) {
-        console.log('[handleAll] Request favicon, starting light bot detection')
+        console.log('[handleAll] Request favicon, starting edge bot detection')
 
-        const lightDetectResponse = await makeLightDetect(request, config)
+        const edgeDetectResponse = await makeEdgeDetect(request, config)
         request = changeURL(config.originURL, request)
-        transferLightHeaders(lightDetectResponse, request)
+        transferEdgeHeaders(edgeDetectResponse, request)
 
         return await fetch(request)
       }
