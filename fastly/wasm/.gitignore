@@ -4,3 +4,4 @@
 /bin
 /pkg
 botd_config.json
+**/fastly.*.toml

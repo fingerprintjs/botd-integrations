@@ -7,6 +7,7 @@ use crate::request_id::RequestId;
 use crate::error::BotdError;
 use fastly::http::Method;
 use BotdError::SendError;
+use crate::CLIENT_IP_HEADER;
 
 pub struct EdgeDetect {
     pub req_id: String,
@@ -44,6 +45,7 @@ impl Detect for EdgeDetect {
             .with_query_str("header")
             .with_body_text_plain(body.as_str())
             .with_header("Auth-Token", config.token.to_owned())
+            .with_header(CLIENT_IP_HEADER, config.ip.to_owned())
             .send(BOTD_BACKEND_NAME) {
             Ok(r) => r,
             Err(e) => return Err(SendError(e))

@@ -30,12 +30,6 @@ name = "botd-compute-edge"
 [setup]
 
   [[setup.backends]]
-    address = "botd-example-app.fpjs.sh"
-    name = "backend"
-    port = 80
-    prompt = "Application backend"
-
-  [[setup.backends]]
     address = "botd.fpapi.io"
     name = "botd"
     port = 443

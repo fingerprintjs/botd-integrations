@@ -1,13 +1,11 @@
-use fastly::{Request, Response, Error};
-use crate::{REQUEST_ID_HEADER_COOKIE, REQUEST_STATUS_HEADER, ERROR_DESCRIPTION_HEADER};
+use crate::{REQUEST_ID_HEADER_COOKIE, REQUEST_STATUS_HEADER, ERROR_DESCRIPTION_HEADER, CLIENT_IP_HEADER};
 use crate::config::{APP_BACKEND_NAME, BOTD_BACKEND_NAME, Config};
 use crate::utils::{get_timestamp_ms, get_ip};
-use json::JsonValue;
-use JsonValue::Null;
 use crate::request_id::RequestId;
+use fastly::{Request, Response, Error};
+use json::JsonValue;
 use fastly::http::Method;
 use fastly::http::request::SendError as FastlySendError;
-use backtrace::Backtrace;
 use std::panic::PanicInfo;
 
 /// An error that occurred during bot detection
@@ -61,14 +59,13 @@ fn send_error_to_app(req: Request, err: &BotdError, req_id: Option<String>) -> R
 }
 
 fn send_error_to_botd(req: Request,
-                      config: JsonValue,
-                      ip_address: String,
+                      token: String,
+                      ip: String,
                       req_id: Option<String>,
                       err: &BotdError) -> Result<Response, Error> {
     let timestamp = get_timestamp_ms();
     let mut json = JsonValue::new_object();
-    json["config"] = config;
-    json["ip_address"] = ip_address.into();
+    json["token"] = token.into();
     json["error"] = err.to_string().into();
     json["request_id"] = req_id.into();
     json["timestamp"] = timestamp.into();
@@ -78,6 +75,7 @@ fn send_error_to_botd(req: Request,
         .with_method(Method::POST)
         .with_path("/integration/error")
         .with_body(body)
+        .with_header(CLIENT_IP_HEADER, ip)
         .send(BOTD_BACKEND_NAME)?)
 }
 
@@ -89,17 +87,16 @@ pub fn handle_error(
 ) -> Result<Response, Error> {
     log::error!("[error] Handled error");
     let req_id = RequestId::search_in_req(&mut req);
-    let ip = get_ip(&req);
-    let config = match config {
-        Some(c) => c.json(),
-        _ => Null
+    let (token, ip) = match config {
+        Some(c) => (c.token.to_owned(), c.ip.to_owned()),
+        _ => (String::new(), get_ip(&req))
     };
     let mut resp = None;
     let botd_req = req.clone_without_body();
     if send_to_app {
         resp = Some(send_error_to_app(req, &err, req_id.to_owned())?);
     }
-    let botd_resp = send_error_to_botd(botd_req, config, ip, req_id, &err)?;
+    let botd_resp = send_error_to_botd(botd_req, token, ip, req_id, &err)?;
     match resp {
         Some(r) => Ok(r),
         _ => Ok(botd_resp)
@@ -108,7 +105,16 @@ pub fn handle_error(
 
 pub fn panic_hook() -> Box<dyn Fn(&PanicInfo<'_>) + 'static + Sync + Send> {
     Box::new(|e| {
-        let trace = Backtrace::new();
-        log::debug!("[main] Panic hook: {}, {:?}", e.to_string(), trace);
+        let err_msg = format!("Panic hook: {}", e.to_string());
+        log::error!("[error] {}", err_msg.as_str());
+
+        let blob = Request::post("");
+
+        if let Err(e) = blob
+            .with_path("/integration/error")
+            .with_body(err_msg)
+            .send(BOTD_BACKEND_NAME) {
+            log::error!("[error] Error during sending error: {}", e.root_cause());
+        }
     })
 }

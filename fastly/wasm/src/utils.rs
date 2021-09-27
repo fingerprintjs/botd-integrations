@@ -56,15 +56,23 @@ pub fn get_host(req: &Request) -> Option<String> {
     Some(req.get_url().host()?.to_string())
 }
 
-pub fn is_ip(ip_str: String) -> bool {
-    IpAddr::from_str(ip_str.as_str()).is_ok()
+pub fn is_ip(src: String) -> bool {
+    IpAddr::from_str(src.as_str()).is_ok()
 }
 
 pub fn get_ip(req: &Request) -> String {
-    req
-        .get_client_ip_addr()
-        .unwrap_or(V4(Ipv4Addr::UNSPECIFIED))
-        .to_string()
+    const CLIENT_IP_HEADER: &str = "Fastly-Client-IP";
+    if let Some(ip) = req.get_header_str(CLIENT_IP_HEADER) {
+        let ip_str = String::from(ip);
+        log::debug!("[ip] Get ip address from Fastly-Client-IP header: {}", ip_str);
+        return ip_str
+    }
+    if let Some(ip) = req.get_client_ip_addr() {
+        let ip_str = ip.to_string();
+        log::debug!("[ip] Get ip address from request: {}", ip_str);
+        return ip_str
+    }
+    V4(Ipv4Addr::UNSPECIFIED).to_string()
 }
 
 pub fn is_static_requested(req: &Request) -> bool {

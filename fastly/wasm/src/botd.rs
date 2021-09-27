@@ -1,10 +1,11 @@
 use fastly::Request;
+use fastly::http::Method;
+use BotdError::SendError;
 use crate::config::{Config, BOTD_BACKEND_NAME};
 use crate::detector::{Detect, check_botd_resp, transfer_headers};
 use crate::request_id::RequestId;
 use crate::error::BotdError;
-use fastly::http::Method;
-use BotdError::SendError;
+use crate::CLIENT_IP_HEADER;
 
 pub struct BotDetector {
     pub req_id: String,
@@ -20,6 +21,7 @@ impl Detect for BotDetector {
             .with_method(Method::GET)
             .with_path("/api/v1/results")
             .with_query_str(query)
+            .with_header(CLIENT_IP_HEADER, config.ip.to_owned())
             .send(BOTD_BACKEND_NAME) {
             Ok(r) => {
                 check_botd_resp(&r)?;
