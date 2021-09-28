@@ -19,13 +19,13 @@ Login: `human`, Password: `iamnotbot`
 
 3. Go to the `Service configuration`, edit the `Domains` section and add a domain. For testing purposes, you can use `{some-name}.edgecompute.app` format. For more information, take a look at [Fastly documentation](https://developer.fastly.com/learning/concepts/routing-traffic-to-fastly/#computeedge).
 
-4. Edit the `Origins` section.
+4. Go to `Hosts` in `Origins` section.
  
-   4.1. Create a new host with the URL of the web application you want to protect, name it `backend`. For demo purposes, you can also use our sample app with `botd-example-app.fpjs.sh` URL. Select correct TLS setting for your app (in most production cases preserve default `Yes, enable TLS and connect securely using port 443`, for our sample app switch to `No, do not enable TLS. Instead connect using port 80`). Update settings.
+   4.1. Create a new host with the URL of the web application you want to protect, name it `backend`. For demo purposes, you can also use our sample app with `botd-example-app.fpjs.sh` URL. Click on a pen icon to modify the host, then, select correct TLS setting for your app (in most production cases preserve default `Yes, enable TLS and connect securely using port 443`, for our sample app switch to `No, do not enable TLS. Instead connect using port 80`). Update settings.
 
-   4.2. Create a new host with the URL of the botd API - `botd.fpapi.io`, name it `botd`. Stick with the default `Yes, enable TLS and connect securely using port 443` settings.
+   4.2. Create a new host with the URL of the botd API - `botd.fpapi.io`. Click modify the host, fill `Name` field as `botd`, choose `Yes, enable TLS and connect securely using port 443` setting, click `Advanced options` at the end of the page and fill `Override host` field as `botd.fpapi.io`.
 
-   4.3. Create a new host with the URL of the CDN - `script-proxy.edgecompute.app`, name it `cdn`. Stick with the default `Yes, enable TLS and connect securely using port 443` settings.
+   4.3. Create a new host with the URL of the CDN - `script-proxy.edgecompute.app`. Click modify the host, fill `Name` field as `cdn`, choose `Yes, enable TLS and connect securely using port 443` setting, click `Advanced options` at the end of the page and fill `Override host` field as `script-proxy.edgecompute.app`.
 
 5. Download the `botd-compute-edge-<version>.tar.gz` package from the [releases](https://github.com/fingerprintjs/botd-integrations/releases) and upload it to the `Package` section.
 
