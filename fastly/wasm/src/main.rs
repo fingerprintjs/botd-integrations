@@ -99,11 +99,10 @@ fn static_req_handler(req: Request) -> Result<Response, Error> {
 
 fn non_static_req_handler(mut req: Request, config: &Config) -> Result<Response, Error> {
     log::info!("[main] Not static request => do bot detection");
-    if let Err(e) = BotDetector::make(&mut req, config) {
-        let err_req = req.clone_with_body();
-        return handle_error(err_req, e, Some(config), true);
-    };
-    Ok(req.send(APP_BACKEND_NAME)?)
+    match BotDetector::make(&mut req, config) {
+        Ok(_) => Ok(req.send(APP_BACKEND_NAME)?),
+        Err(e) => handle_error(req, e, Some(config), true)
+    }
 }
 
 #[fastly::main]

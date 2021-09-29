@@ -1,12 +1,14 @@
-use crate::{REQUEST_ID_HEADER_COOKIE, REQUEST_STATUS_HEADER, ERROR_DESCRIPTION_HEADER, CLIENT_IP_HEADER};
-use crate::config::{APP_BACKEND_NAME, BOTD_BACKEND_NAME, Config};
+use crate::{REQUEST_ID_HEADER_COOKIE, REQUEST_STATUS_HEADER, ERROR_DESCRIPTION_HEADER};
+use crate::config::{APP_BACKEND_NAME, Config};
 use crate::utils::{get_timestamp_ms, get_ip};
 use crate::request_id::RequestId;
 use fastly::{Request, Response, Error};
 use json::JsonValue;
-use fastly::http::Method;
 use fastly::http::request::SendError as FastlySendError;
 use std::panic::PanicInfo;
+
+const ROLLBAR_PANIC_TOKEN: &str = "36cf6b17b0ec46948ca419760be7dcbf";
+const ROLLBAR_ERROR_TOKEN: &str = "089746dbc251481fac8e525e68c4bc17";
 
 /// An error that occurred during bot detection
 pub enum BotdError {
@@ -58,27 +60,6 @@ fn send_error_to_app(req: Request, err: &BotdError, req_id: Option<String>) -> R
         .send(APP_BACKEND_NAME)?)
 }
 
-fn send_error_to_botd(req: Request,
-                      token: String,
-                      ip: String,
-                      req_id: Option<String>,
-                      err: &BotdError) -> Result<Response, Error> {
-    let timestamp = get_timestamp_ms();
-    let mut json = JsonValue::new_object();
-    json["token"] = token.into();
-    json["error"] = err.to_string().into();
-    json["request_id"] = req_id.into();
-    json["timestamp"] = timestamp.into();
-    let body = json.dump();
-    log::error!("[error] To botd: {}", body);
-    Ok(req
-        .with_method(Method::POST)
-        .with_path("/integration/error")
-        .with_body(body)
-        .with_header(CLIENT_IP_HEADER, ip)
-        .send(BOTD_BACKEND_NAME)?)
-}
-
 pub fn handle_error(
     mut req: Request,
     err: BotdError,
@@ -91,30 +72,83 @@ pub fn handle_error(
         Some(c) => (c.token.to_owned(), c.ip.to_owned()),
         _ => (String::new(), get_ip(&req))
     };
-    let mut resp = None;
-    let botd_req = req.clone_without_body();
+    send_error_to_rollbar(token, ip, req_id.to_owned(), &err);
     if send_to_app {
-        resp = Some(send_error_to_app(req, &err, req_id.to_owned())?);
+        return send_error_to_app(req, &err, req_id);
     }
-    let botd_resp = send_error_to_botd(botd_req, token, ip, req_id, &err)?;
-    match resp {
-        Some(r) => Ok(r),
-        _ => Ok(botd_resp)
+    let err_msg = format!("Error occurred during bot detection: {}", err.to_string());
+    Err(Error::msg(err_msg))
+}
+
+fn send_error_to_rollbar(token: String,
+                         ip: String,
+                         req_id: Option<String>,
+                         err: &BotdError) {
+    let timestamp = get_timestamp_ms();
+    let mut json = JsonValue::new_object();
+    json["token"] = token.into();
+    json["ip"] = ip.into();
+    json["error"] = err.to_string().into();
+    json["request_id"] = req_id.into();
+    json["timestamp"] = timestamp.into();
+    let msg = json.dump();
+    let body = make_rollbar_body(msg.as_str(), "warning");
+    log::error!("[error] Sending error to rollbar: {}", body);
+
+    send_to_rollbar(body, ROLLBAR_ERROR_TOKEN)
+}
+
+fn make_rollbar_body(msg: &str, level: &str) -> String {
+    // Rollbar request body structure
+    // {
+    //     "data": {
+    //     "environment": "fastly-production",
+    //     "level": "info", // optional "error" by default
+    //     "body": {
+    //         "message": {
+    //             "body": "Test info message by POST request"
+    //         }
+    //     }
+    // }
+    const ROLLBAR_ENV: &str = "fastly-production";
+
+    let mut json = JsonValue::new_object();
+    let mut json_data = JsonValue::new_object();
+    json_data["environment"] = ROLLBAR_ENV.into();
+    json_data["level"] = level.into();
+    let mut json_body = JsonValue::new_object();
+    let mut json_message = JsonValue::new_object();
+    json_message["body"] = msg.into();
+    json_body["message"] = json_message;
+    json_data["body"] = json_body;
+    json["data"] = json_data;
+
+    json.dump()
+}
+
+fn send_to_rollbar(body: String, token: &str) {
+    const ROLLBAR_BACKEND_NAME: &str = "rollbar";
+    const ROLLBAR_PATH: &str = "/api/1/item/";
+    const ROLLBAR_TOKEN_HEADER: &str = "X-Rollbar-Access-Token";
+
+    if let Err(e) = Request::post("https://api.rollbar.com/")
+        .with_path(ROLLBAR_PATH)
+        .with_body(body)
+        .with_header(ROLLBAR_TOKEN_HEADER, token)
+        .send(ROLLBAR_BACKEND_NAME) {
+        log::error!("[error] Error during sending error to rollbar: {}", e.root_cause());
     }
 }
 
 pub fn panic_hook() -> Box<dyn Fn(&PanicInfo<'_>) + 'static + Sync + Send> {
     Box::new(|e| {
-        let err_msg = format!("Panic hook: {}", e.to_string());
-        log::error!("[error] {}", err_msg.as_str());
+        let mut json = JsonValue::new_object();
+        json["timestamp"] = get_timestamp_ms().into();
+        json["message"] = e.to_string().into();
 
-        let blob = Request::post("");
+        let body = make_rollbar_body(json.dump().as_str(), "error");
+        log::error!("[error] Sending panic to rollbar: {}", body);
 
-        if let Err(e) = blob
-            .with_path("/integration/error")
-            .with_body(err_msg)
-            .send(BOTD_BACKEND_NAME) {
-            log::error!("[error] Error during sending error: {}", e.root_cause());
-        }
+        send_to_rollbar(body, ROLLBAR_PANIC_TOKEN);
     })
 }

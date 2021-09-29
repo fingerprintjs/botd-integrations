@@ -23,6 +23,10 @@ name = "botd-compute-edge"
       override_host = "script-proxy.edgecompute.app"
       url = "https://script-proxy.edgecompute.app/"
 
+    [local_server.backends.rollbar]
+      override_host = "api.rollbar.com"
+      url = "https://api.rollbar.com/"
+
     [local_server.dictionaries.botd_config]
       file = "botd_config.json"
       format = "json"
@@ -40,3 +44,9 @@ name = "botd-compute-edge"
     name = "cdn"
     port = 443
     prompt = "CDN"
+
+  [[setup.backends]]
+    address = "api.rollbar.com"
+    name = "rollbar"
+    port = 443
+    prompt = "Rollbar"
