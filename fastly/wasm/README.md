@@ -35,7 +35,7 @@ Login: `human`, Password: `iamnotbot`
 
    6.1. Add item `token` with authorization token obtained from [FingerprintJS](https://fingerprintjs.com/).
 
-   6.2. **[OPTIONAL]** Add item `disable` with value `true` or `false`. If the value is `true`, botd will be turned off.
+   6.2. **[OPTIONAL]** Add item `disable` with value `true` or `false`. If the value is `true`, middleware will pass all requests as is without calling botd.
 
    6.3. **[OPTIONAL]** Add item `log_endpoint` with logging endpoint name from `Logging` section.
 
