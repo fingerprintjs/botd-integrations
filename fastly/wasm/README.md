@@ -35,7 +35,7 @@ Login: `human`, Password: `iamnotbot`
 
    6.1. Add item `token` with authorization token obtained from [FingerprintJS](https://fingerprintjs.com/).
 
-   6.2. **[OPTIONAL]** Add item `app_host` with host to origin. You can use our sample host `botd-example-app.fpjs.sh`. We set this value to `HOST` header in each request for bypassing CORS-policy.
+   6.2. **[OPTIONAL]** Add item `disable` with value `true` or `false`. If the value is `true`, botd will be turned off.
 
    6.3. **[OPTIONAL]** Add item `log_endpoint` with logging endpoint name from `Logging` section.
 
