@@ -27,6 +27,8 @@ Login: `human`, Password: `iamnotbot`
 
    4.3. Create a new host with the URL of the CDN - `script-proxy.edgecompute.app`. Click modify the host, fill `Name` field as `cdn`, choose `Yes, enable TLS and connect securely using port 443` setting, click `Advanced options` at the end of the page and fill `Override host` field as `script-proxy.edgecompute.app`.
 
+   4.4. Create a new host with the URL of the Rollbar - `api.rollbar.com`. Click modify the host, fill `Name` field as `rollbar`, choose `Yes, enable TLS and connect securely using port 443` setting, click `Advanced options` at the end of the page and fill `Override host` field as `api.rollbar.com`.
+
 5. Download the `botd-compute-edge-<version>.tar.gz` package from the [releases](https://github.com/fingerprintjs/botd-integrations/releases) and upload it to the `Package` section.
 
 6. Go to the `Dictionaries` section, create a new `botd_config` dictionary.
@@ -36,6 +38,8 @@ Login: `human`, Password: `iamnotbot`
    6.2. **[OPTIONAL]** Add item `app_host` with host to origin. You can use our sample host `botd-example-app.fpjs.sh`. We set this value to `HOST` header in each request for bypassing CORS-policy.
 
    6.3. **[OPTIONAL]** Add item `log_endpoint` with logging endpoint name from `Logging` section.
+
+   6.4. **[OPTIONAL]** Add item `debug` with value `true` or `false`. If the value is true, additional information will be logged to your `log_endpoint`.
  
 8. Activate integration.
 
