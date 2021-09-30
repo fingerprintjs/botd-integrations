@@ -39,7 +39,7 @@ Login: `human`, Password: `iamnotbot`
 
    6.3. **[OPTIONAL]** Add item `log_endpoint` with logging endpoint name from `Logging` section.
 
-   6.4. **[OPTIONAL]** Add item `debug` with value `true` or `false`. If the value is true, additional information will be logged to your `log_endpoint`.
+   6.4. **[OPTIONAL]** Add item `debug` with value `true` or `false`. If the value is `true`, additional information will be logged to your `log_endpoint`.
  
 8. Activate integration.
 
