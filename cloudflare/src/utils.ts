@@ -1,28 +1,13 @@
-import {
-  COOKIE_HEADER,
-  COOKIE_NAME,
-  ERROR_DESCRIPTION_HEADER,
-  REQUEST_STATUS_HEADER,
-  SEC_FETCH_DEST_HEADER,
-  STATIC_PATH_ENDINGS,
-  STATIC_SEC_FETCH_DEST,
-  Status,
-} from './constants'
+import { PATH_HASH } from './detect'
 
 export type HeadersDict = Record<string, unknown>
 
-export function changeURL(newURL: string, request: Request): Request {
-  return new Request(newURL, new Request(request))
+export function cloneReqWithURL(req: Request, newURL: string): Request {
+  return new Request(newURL, new Request(req))
 }
 
-function getCookie(cookie: string, name: string): string | undefined {
-  const matches = cookie.match(new RegExp('(?:^|; )' + name.replace(/([.$?*|{}()[\]\\/+^])/g, '\\$1') + '=([^;]*)'))
-  return matches ? decodeURIComponent(matches[1]) : undefined
-}
-
-export function getRequestID(request: Request): string {
-  const cookies = request.headers.get(COOKIE_HEADER) || ''
-  return getCookie(cookies, COOKIE_NAME) || ''
+export function getIP(req: Request): string {
+  return req.headers.get("CF-Connecting-IP") || "0.0.0.0"
 }
 
 export function getHeadersDict(requestHeaders: Headers): HeadersDict {
@@ -38,30 +23,48 @@ export function trimURL(url: string): string {
   return url
 }
 
-export function setErrorHeaders(r: Request | Response, e: Error): void {
-  r.headers.append(REQUEST_STATUS_HEADER, Status.ERROR)
-  r.headers.append(ERROR_DESCRIPTION_HEADER, e.message)
-}
-
-export function getPathFromURL(url: string): string {
+export function path(url: string): string {
   return new URL(url).pathname
 }
 
-export function isRequestStatic(request: Request): boolean {
+export function host(url: string): string {
+  return new URL(url).hostname
+}
+
+export function query(url: string): string {
+  return new URL(url).search
+}
+
+export function insert(src: string, i: number, s: string): string {
+  return src.substr(0, i) + s + src.substr(i);
+}
+
+export function isStatic(req: Request): boolean {
+  const STATIC_SEC_FETCH_DEST = ['font', 'script', 'image', 'style', 'video', 'manifest', 'object'] // TODO: add all static types
+  const STATIC_PATH_ENDINGS = ['.css', '.js', '.jpg', '.png', '.svg', '.jpeg', '.woff2'] // TODO: add all static types
+
   // sec-fetch-dest header shows which content was requested, but it works not in all web-browsers
-  const secFetchDestOption = request.headers.get(SEC_FETCH_DEST_HEADER)
+  const secFetchDestOption = req.headers.get('sec-fetch-dest')
   if (secFetchDestOption != null) {
     for (const s of STATIC_SEC_FETCH_DEST) if (s === secFetchDestOption) return true
     return false
   }
   // sec-fetch-dest header doesn't exist => check by path ending
   for (const s of STATIC_PATH_ENDINGS) {
-    if (request.url.endsWith(s)) return true
+    if (req.url.endsWith(s)) return true
   }
   return false
 }
 
-export function isRequestFavicon(request: Request): boolean {
-  const path = getPathFromURL(request.url)
-  return path.endsWith('.ico') && path.indexOf('fav') > -1
+export function isFavicon(req: Request): boolean {
+  const p = path(req.url)
+  return isStatic(req) && p.endsWith('.ico') && p.indexOf('fav') > -1
+}
+
+export function isInit(req: Request): boolean {
+  return path(req.url) == "/"
+}
+
+export function isDetect(req: Request): boolean {
+  return path(req.url) == `/${PATH_HASH}/detect`
 }

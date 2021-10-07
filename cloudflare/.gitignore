@@ -2,5 +2,5 @@ dist
 node_modules
 transpiled
 /.idea/
-
-wrangler.toml
+*.toml
+!wrangler.toml.example
