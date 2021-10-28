@@ -10,9 +10,9 @@ export function getIP(req: Request): string {
   return req.headers.get("CF-Connecting-IP") || "0.0.0.0"
 }
 
-export function getHeadersDict(requestHeaders: Headers): HeadersDict {
+export function getHeadersDict(reqHeaders: Headers): HeadersDict {
   const headersDict: HeadersDict = {}
-  for (const [key, value] of requestHeaders) {
+  for (const [key, value] of reqHeaders) {
     headersDict[key] = [value]
   }
   return headersDict

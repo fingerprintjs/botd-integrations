@@ -27,7 +27,6 @@ async function detectHandler(req: Request, config: Config): Promise<Response> {
   botdReq.headers.append('botd-client-ip', config.ip)
   const resp = await fetch(botdReq)
   const body = await resp.text()
-  console.log(body)
   const bodyJSON = JSON.parse(body)
   config.reqId = bodyJSON["requestId"]
   const cookie = makeCookie(req, config)
@@ -70,12 +69,19 @@ async function allHandler(r: Request): Promise<Response> {
     const config = await getConfig(r)
     const req = cloneReqWithURL(r, config.originURL)
 
-    if (isInit(req))          return initHandler(req, config)
-    else if (isDetect(req))   return detectHandler(req, config)
-    else if (isFavicon(req))  return faviconHandler(req, config)
-    else if (isStatic(req))   return staticHandler(req)
-    else                      return nonStaticHandler(req, config)
-  } catch (e) {               return errorHandler(r, e) }
+    if (isInit(req))
+      return initHandler(req, config)
+    else if (isDetect(req))
+      return detectHandler(req, config)
+    else if (isFavicon(req))
+      return faviconHandler(req, config)
+    else if (isStatic(req))
+      return staticHandler(req)
+    else
+      return nonStaticHandler(req, config)
+  } catch (e) {
+    return errorHandler(r, e)
+  }
 }
 
 const router = Router()
