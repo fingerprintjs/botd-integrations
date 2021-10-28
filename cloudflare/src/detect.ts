@@ -54,9 +54,7 @@ function transferHeaders(src: Response, dst: Request): void {
 }
 
 export function makeCookie(req: Request, config: Config): string {
-  console.log(req.url)
   const domain = psl.get(host(config.realURL)) || undefined
-
   return cookie.serialize(REQUEST_ID, config.reqId, {
     path: '/',
     secure: true,
