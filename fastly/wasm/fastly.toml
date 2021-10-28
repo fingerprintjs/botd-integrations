@@ -4,7 +4,7 @@
 authors = ["FingerprintJS"]
 description = "FingerprintJS Botd integration with Fastly"
 language = "rust"
-manifest_version = 1
+manifest_version = 2
 name = "botd-compute-edge"
 
 [local_server]
@@ -33,20 +33,17 @@ name = "botd-compute-edge"
 
 [setup]
 
-  [[setup.backends]]
+  [setup.backends.botd]
     address = "botd.fpapi.io"
-    name = "botd"
     port = 443
     prompt = "Botd backend"
 
-  [[setup.backends]]
+  [setup.backends.cdn]
     address = "script-proxy.edgecompute.app"
-    name = "cdn"
     port = 443
     prompt = "CDN"
 
-  [[setup.backends]]
+  [setup.backends.rollbar]
     address = "api.rollbar.com"
-    name = "rollbar"
     port = 443
     prompt = "Rollbar"
