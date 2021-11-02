@@ -8,6 +8,8 @@ export default interface Config {
   token: string
   ip: string
   reqId: string
+  debug: boolean
+  version: string
 }
 
 async function getFromConfig(key: string): Promise<string | null> {
@@ -26,10 +28,14 @@ export async function getConfig(request: Request): Promise<Config> {
   let originURL = await getFromConfig('botd_app')
   originURL = originURL == null ? request.url : trimURL(originURL) + path(request.url)
 
+  const debug = await getFromConfig('botd_debug') != null
+  const versionStr = await getFromConfig('botd_version')
+  const version = versionStr == null ? "latest" : versionStr
+
   const ip = getIP(request)
   const reqId = getRequestIDFromCookie(request)
   const realURL = request.url
   console.log(`[getConfig] Config - Botd URL: ${botdURL}, App URL: ${originURL}, Token: ${token}, IP: ${ip}, request ID: ${reqId}`)
 
-  return { originURL, botdURL, realURL, token, ip, reqId }
+  return { originURL, botdURL, realURL, token, ip, reqId, debug, version }
 }
