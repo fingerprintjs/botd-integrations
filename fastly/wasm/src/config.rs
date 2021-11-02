@@ -13,27 +13,30 @@ pub const CDN_BACKEND_NAME: &str = "cdn";
 pub struct Config {
     pub token: String,
     pub ip: String,
+    pub agent_version: String,
+    pub debug: bool
 }
 
 impl Config {
     pub fn new(req: &Request) -> Result<Self, BotdError> {
         const DEFAULT_LOG_ENDPOINT: &str = "default";
+        const DEFAULT_AGENT_VERSION: &str = "latest";
         const CONFIG_DICT_NAME: &str = "botd_config";
         const CONFIG_TOKEN: &str = "token";
         const CONFIG_LOG_ENDPOINT: &str = "log_endpoint";
         const CONFIG_DISABLE: &str = "disable";
         const CONFIG_DEBUG: &str = "debug";
+        const CONFIG_AGENT_VERSION: &str = "agent_version";
 
         let dictionary = Dictionary::open(CONFIG_DICT_NAME);
 
         let debug_default = || false.to_string();
-        let debug = dictionary.get(CONFIG_DEBUG).unwrap_or_else(debug_default);
-        let need_debug = true.to_string() == debug;
+        let debug = dictionary.get(CONFIG_DEBUG).unwrap_or_else(debug_default) == true.to_string();
 
         let log_endpoint_name_default = || String::from(DEFAULT_LOG_ENDPOINT);
         let log_endpoint_name = dictionary.get(CONFIG_LOG_ENDPOINT).unwrap_or_else(log_endpoint_name_default);
 
-        if need_debug {
+        if debug {
             log_fastly::init_simple(log_endpoint_name, Debug);
         } else {
             log_fastly::init_simple(log_endpoint_name, Info);
@@ -49,6 +52,9 @@ impl Config {
             _ => return Err(NoTokenInConfig)
         };
 
-        Ok(Config { token, ip })
+        let agent_version_default = || String::from(DEFAULT_AGENT_VERSION);
+        let agent_version = dictionary.get(CONFIG_AGENT_VERSION).unwrap_or_else(agent_version_default);
+
+        Ok(Config { token, ip, agent_version, debug })
     }
 }
