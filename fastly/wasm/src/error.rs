@@ -84,13 +84,11 @@ fn send_error_to_rollbar(token: String,
                          ip: String,
                          req_id: Option<String>,
                          err: &BotdError) {
-    let timestamp = get_timestamp_ms();
     let mut json = JsonValue::new_object();
     json["token"] = token.into();
     json["ip"] = ip.into();
     json["error"] = err.to_string().into();
     json["request_id"] = req_id.into();
-    json["timestamp"] = timestamp.into();
     let msg = json.dump();
     let body = make_rollbar_body(msg.as_str(), "warning");
     log::error!("[error] Sending error to rollbar: {}", body);
@@ -100,18 +98,19 @@ fn send_error_to_rollbar(token: String,
 
 fn make_rollbar_body(msg: &str, level: &str) -> String {
     // Rollbar request body structure
-    // {
-    //     "data": {
-    //     "environment": "fastly-production",
-    //     "level": "info", // optional "error" by default
-    //     "body": {
-    //         "message": {
-    //             "body": "Test info message by POST request"
-    //         }
-    //     }
+    //  {
+    //      "data": {
+    //          "environment": "fastly-production",
+    //          "level": "info", // optional "error" by default
+    //          "timestamp": "111111111", // optional when this occurred, as a unix timestamp.
+    //          "body": {
+    //              "message": {
+    //                  "body": "Test info message by POST request"
+    //              }
+    //          }
     // }
     const ROLLBAR_ENV: &str = "fastly-production";
-
+    let timestamp: i64 = get_timestamp_ms();
     let mut json = JsonValue::new_object();
     let mut json_data = JsonValue::new_object();
     json_data["environment"] = ROLLBAR_ENV.into();
@@ -121,6 +120,7 @@ fn make_rollbar_body(msg: &str, level: &str) -> String {
     json_message["body"] = msg.into();
     json_body["message"] = json_message;
     json_data["body"] = json_body;
+    json_data["timestamp"] = timestamp.into();
     json["data"] = json_data;
 
     json.dump()
