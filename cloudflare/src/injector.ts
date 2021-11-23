@@ -6,7 +6,7 @@ export function injectScript(html: string, config: Config): string {
   const scriptSrc = `https://openfpcdn.io/botd/v${config.version}/esm${config.debug ? ".min" : ""}.js`
   const script = `
     <script>
-      async function getResults() { 
+      function getResults() { 
         import('${scriptSrc}')
         .then(Botd => Botd.load({
           token: '${config.token}',
