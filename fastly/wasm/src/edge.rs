@@ -48,7 +48,7 @@ impl Detect for EdgeDetect {
             .with_header(CLIENT_IP_HEADER, config.ip.to_owned())
             .send(BOTD_BACKEND_NAME) {
             Ok(r) => r,
-            Err(e) => return Err(SendError(e))
+            Err(e) => return Err(SendError(Box::new(e)))
         };
         check_botd_resp(&edge_resp)?;
         let req_id = RequestId::from_resp_header(&edge_resp)?;

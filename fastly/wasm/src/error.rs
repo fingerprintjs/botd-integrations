@@ -29,9 +29,11 @@ pub enum BotdError {
     /// Can't cast to string.
     ToStringCast(String),
     /// Error during request sending.
-    SendError(FastlySendError),
+    SendError(Box<FastlySendError>),
     /// Can't extract botd request status from headers.
     NoRequestIdInCookie,
+    /// Error connected with fp cdn.
+    CDNRedirectError,
 }
 
 impl ToString for BotdError {
@@ -47,6 +49,7 @@ impl ToString for BotdError {
             BotdError::ToStringCast(name) => format!("Can't cast {} to string", name),
             BotdError::SendError(e) => format!("Error occurred during sending to backend: {}", e.root_cause()),
             BotdError::NoRequestIdInCookie => String::from("Request id cannot be found in cookie"),
+            BotdError::CDNRedirectError => String::from("Error with Fp CDN"),
         }
     }
 }
@@ -84,19 +87,12 @@ fn send_error_to_rollbar(token: String,
                          ip: String,
                          req_id: Option<String>,
                          err: &BotdError) {
-    let mut json = JsonValue::new_object();
-    json["token"] = token.into();
-    json["ip"] = ip.into();
-    json["error"] = err.to_string().into();
-    json["request_id"] = req_id.into();
-    let msg = json.dump();
-    let body = make_rollbar_body(msg.as_str(), "warning");
+    let body = make_rollbar_warning_body(err.to_string(), ip, req_id.unwrap_or_default(), token);
     log::error!("[error] Sending error to rollbar: {}", body);
-
     send_to_rollbar(body, ROLLBAR_ERROR_TOKEN)
 }
 
-fn make_rollbar_body(msg: &str, level: &str) -> String {
+fn make_rollbar_warning_body(msg: String, ip: String, req_id: String, token: String) -> String {
     // Rollbar request body structure
     //  {
     //      "data": {
@@ -107,14 +103,47 @@ fn make_rollbar_body(msg: &str, level: &str) -> String {
     //              "message": {
     //                  "body": "Test info message by POST request"
     //              }
-    //          }
-    // }
+    //          },
+    //          "request": {
+    //              "user_ip": "100.51.43.14"
+    //          },
+    //          "custom": {
+    //              "request_id": "1234512345678909876543w2345",
+    //              "token": "12321232123"
+    //  }}}
+    const ROLLBAR_LEVEL: &str = "warning";
     const ROLLBAR_ENV: &str = "fastly-production";
     let timestamp: i64 = get_timestamp_ms();
     let mut json = JsonValue::new_object();
     let mut json_data = JsonValue::new_object();
     json_data["environment"] = ROLLBAR_ENV.into();
-    json_data["level"] = level.into();
+    json_data["level"] = ROLLBAR_LEVEL.into();
+    let mut json_body = JsonValue::new_object();
+    let mut json_message = JsonValue::new_object();
+    json_message["body"] = msg.into();
+    json_body["message"] = json_message;
+    let mut json_request = JsonValue::new_object();
+    json_request["user_ip"] = ip.into();
+    let mut json_custom = JsonValue::new_object();
+    json_custom["request_id"] = req_id.into();
+    json_custom["token"] = token.into();
+    json_data["request"] = json_request;
+    json_data["custom"] = json_custom;
+    json_data["body"] = json_body;
+    json_data["timestamp"] = timestamp.into();
+    json["data"] = json_data;
+
+    json.dump()
+}
+
+fn make_rollbar_panic_body(msg: String) -> String {
+    const ROLLBAR_LEVEL: &str = "error";
+    const ROLLBAR_ENV: &str = "fastly-production";
+    let timestamp: i64 = get_timestamp_ms();
+    let mut json = JsonValue::new_object();
+    let mut json_data = JsonValue::new_object();
+    json_data["environment"] = ROLLBAR_ENV.into();
+    json_data["level"] = ROLLBAR_LEVEL.into();
     let mut json_body = JsonValue::new_object();
     let mut json_message = JsonValue::new_object();
     json_message["body"] = msg.into();
@@ -122,7 +151,6 @@ fn make_rollbar_body(msg: &str, level: &str) -> String {
     json_data["body"] = json_body;
     json_data["timestamp"] = timestamp.into();
     json["data"] = json_data;
-
     json.dump()
 }
 
@@ -142,11 +170,7 @@ fn send_to_rollbar(body: String, token: &str) {
 
 pub fn panic_hook() -> Box<dyn Fn(&PanicInfo<'_>) + 'static + Sync + Send> {
     Box::new(|e| {
-        let mut json = JsonValue::new_object();
-        json["timestamp"] = get_timestamp_ms().into();
-        json["message"] = e.to_string().into();
-
-        let body = make_rollbar_body(json.dump().as_str(), "error");
+        let body = make_rollbar_panic_body(e.to_string());
         log::error!("[error] Sending panic to rollbar: {}", body);
 
         send_to_rollbar(body, ROLLBAR_PANIC_TOKEN);

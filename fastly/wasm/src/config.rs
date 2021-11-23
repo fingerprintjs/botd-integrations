@@ -20,7 +20,7 @@ pub struct Config {
 impl Config {
     pub fn new(req: &Request) -> Result<Self, BotdError> {
         const DEFAULT_LOG_ENDPOINT: &str = "default";
-        const DEFAULT_AGENT_VERSION: &str = "latest";
+        const DEFAULT_AGENT_VERSION: &str = "0.1";
         const CONFIG_DICT_NAME: &str = "botd_config";
         const CONFIG_TOKEN: &str = "token";
         const CONFIG_LOG_ENDPOINT: &str = "log_endpoint";

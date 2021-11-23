@@ -10,9 +10,11 @@ mod edge;
 use std::panic;
 use fastly::{Error, Request, Response};
 use fastly::http::header::{ACCEPT_ENCODING, SET_COOKIE};
+use fastly::http::StatusCode;
 use botd::BotDetector;
 use edge::EdgeDetect;
 use BotdError::SendError;
+use crate::BotdError::CDNRedirectError;
 use crate::config::{Config, APP_BACKEND_NAME, BOTD_BACKEND_NAME, CDN_BACKEND_NAME};
 use crate::utils::{is_static_requested, make_cookie, is_favicon_requested, get_e_tld_plus_one};
 use crate::detector::Detect;
@@ -21,6 +23,7 @@ use crate::request_id::RequestId;
 use crate::error::{handle_error, BotdError, panic_hook};
 
 const PATH_HASH: &str = "2f70092c";
+const CDN_DIST_PATH: &str = "/2f70092c/dist";
 
 pub const REQUEST_ID_HEADER_COOKIE: &str = "botd-request-id";
 pub const REQUEST_STATUS_HEADER: &str = "botd-request-status";
@@ -61,7 +64,7 @@ fn detect_req_handler(req: Request, config: &Config) -> Result<Response, Error> 
         .with_header(CLIENT_IP_HEADER, config.ip.to_owned())
         .send(BOTD_BACKEND_NAME) {
         Ok(r) => r,
-        Err(e) => return handle_error(err_req, SendError(e), Some(config), false)
+        Err(e) => return handle_error(err_req, SendError(Box::new(e)), Some(config), false)
     };
     let botd_resp_clone = botd_resp.clone_with_body();
     let req_id = RequestId::from_resp_body(botd_resp_clone).unwrap_or_default();
@@ -70,15 +73,32 @@ fn detect_req_handler(req: Request, config: &Config) -> Result<Response, Error> 
     Ok(botd_resp.with_header(SET_COOKIE, cookie))
 }
 
-fn dist_req_handler(req: Request, config: &Config, cdn_path: &str) -> Result<Response, Error> {
+fn dist_req_handler(req: Request, config: &Config) -> Result<Response, Error> {
     log::info!("[main] Script request => redirecting to CDN");
     let err_req = req.clone_without_body();
+    let cdn_req = req.clone_without_body();
+    let req_path = String::from(req.get_path());
+    let cut_path = req_path[CDN_DIST_PATH.len()..].to_owned();
+    let path = format!("/botd{}", cut_path);
     match req
-        .with_path(cdn_path)
-        // .with_pass(false)
+        .with_path(path.as_str())
         .send(CDN_BACKEND_NAME) {
-        Ok(r) => Ok(r),
-        Err(e) => handle_error(err_req, SendError(e), Some(config), false)
+        Ok(r) => {
+            if r.get_status() == StatusCode::FOUND {
+                if let Some(l) = r.get_header("location") {
+                    let actual_path = l.to_str().unwrap_or_default();
+                    match cdn_req
+                        .with_path(actual_path)
+                        .send(CDN_BACKEND_NAME) {
+                        Ok(cdn_resp) => Ok(cdn_resp),
+                        Err(e) => handle_error(err_req, SendError(Box::new(e)), Some(config), false)
+                    }
+                } else {
+                    handle_error(err_req, CDNRedirectError, Some(config), false)
+                }
+            } else { Ok(r) }
+        },
+        Err(e) => handle_error(err_req, SendError(Box::new(e)), Some(config), false)
     }
 }
 
@@ -118,17 +138,10 @@ fn main(mut req: Request) -> Result<Response, Error> {
     log::info!("[main] New request {}", req.get_url_str());
     log::debug!("[main] IP address: {}, headers: {:?}", config.ip, req.get_header_names_str());
 
-    let dist_path = format!("/{}/dist", PATH_HASH);
-
     return match req.get_path() {
         "/" => init_req_handler(req, &config),
         p if p == format!("/{}/detect", PATH_HASH) => detect_req_handler(req, &config),
-        p if p.starts_with(dist_path.as_str()) => {
-            let path = p.to_owned();
-            let cdn_path = &path[dist_path.len()..];
-            log::debug!("[main] CDN path: {}", cdn_path);
-            dist_req_handler(req, &config, cdn_path)
-        },
+        p if p.starts_with(CDN_DIST_PATH) => dist_req_handler(req, &config),
         _ if is_favicon_requested(&req) => favicon_req_handler(req, &config),
         _ if is_static_requested(&req) => static_req_handler(req),
         _ => non_static_req_handler(req, &config)
