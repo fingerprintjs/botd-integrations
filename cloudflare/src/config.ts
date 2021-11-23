@@ -30,7 +30,7 @@ export async function getConfig(request: Request): Promise<Config> {
 
   const debug = await getFromConfig('botd_debug') != null
   const versionStr = await getFromConfig('botd_version')
-  const version = versionStr == null ? "latest" : versionStr
+  const version = versionStr == null ? "0.1" : versionStr
 
   const ip = getIP(request)
   const reqId = getRequestIDFromCookie(request)

@@ -20,8 +20,8 @@ name = "botd-compute-edge"
       url = "https://botd.fpapi.io/"
 
     [local_server.backends.cdn]
-      override_host = "script-proxy.edgecompute.app"
-      url = "https://script-proxy.edgecompute.app/"
+      override_host = "openfpcdn.io"
+      url = "https://openfpcdn.io/"
 
     [local_server.backends.rollbar]
       override_host = "api.rollbar.com"
@@ -39,7 +39,7 @@ name = "botd-compute-edge"
     prompt = "Botd backend"
 
   [setup.backends.cdn]
-    address = "script-proxy.edgecompute.app"
+    address = "openfpcdn.io"
     port = 443
     prompt = "CDN"
 

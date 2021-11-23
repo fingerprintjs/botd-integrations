@@ -25,7 +25,7 @@ Login: `human`, Password: `iamnotbot`
 
    4.2. Create a new host with the URL of the botd API - `botd.fpapi.io`. Click modify the host, fill `Name` field as `botd`, choose `Yes, enable TLS and connect securely using port 443` setting, click `Advanced options` at the end of the page and fill `Override host` field as `botd.fpapi.io`.
 
-   4.3. Create a new host with the URL of the CDN - `script-proxy.edgecompute.app`. Click modify the host, fill `Name` field as `cdn`, choose `Yes, enable TLS and connect securely using port 443` setting, click `Advanced options` at the end of the page and fill `Override host` field as `script-proxy.edgecompute.app`.
+   4.3. Create a new host with the URL of the CDN - `openfpcdn.io`. Click modify the host, fill `Name` field as `cdn`, choose `Yes, enable TLS and connect securely using port 443` setting, click `Advanced options` at the end of the page and fill `Override host` field as `openfpcdn.io`.
 
    4.4. Create a new host with the URL of the Rollbar - `api.rollbar.com`. Click modify the host, fill `Name` field as `rollbar`, choose `Yes, enable TLS and connect securely using port 443` setting, click `Advanced options` at the end of the page and fill `Override host` field as `api.rollbar.com`.
 

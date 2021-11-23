@@ -28,7 +28,7 @@ impl Detect for BotDetector {
                 transfer_headers(req, &r);
                 Ok(BotDetector { req_id })
             }
-            Err(e) => Err(SendError(e))
+            Err(e) => Err(SendError(Box::new(e)))
         }
     }
 }
