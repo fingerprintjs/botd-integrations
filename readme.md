@@ -16,12 +16,12 @@ Every CDN example will run a middleware function to intercept requests and respo
 1. End-user loads an example app provided by the integrations ([app powered by Cloudflare](https://botd.fingerprintjs.workers.dev/) or app using [Compute@Edge by Fastly](https://botd-fingerprintjs.edgecompute.app/)).
 
 2. Middleware intercepts first two requests
-   (for HTML content of the page and for favicon) and does `light bot detection`
-   (sends needed data for light analysis to [Server Botd API](https://github.com/fingerprintjs/botd/blob/main/docs/server_api.md)).
+   (for HTML content of the page and for favicon) and does `edge bot detection`
+   (sends needed data for edge analysis to [Server Botd API](https://github.com/fingerprintjs/botd/blob/main/docs/server_api.md)).
    On this step we cannot get a lot of useful information to do
    `full bot detection`, we have only information from request (e.g., headers).
 
-3. Middleware sets result of `light bot detection` into headers of request and sends it to origin.
+3. Middleware sets result of `edge bot detection` into headers of request and sends it to origin.
 
 4. Middleware receives response from origin. If it's a request for HTML content it will inject
    [Botd script](https://github.com/fingerprintjs/botd) into the page.

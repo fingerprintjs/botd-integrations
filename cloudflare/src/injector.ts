@@ -20,6 +20,5 @@ export function injectScript(html: string, config: Config): string {
 
   const match = /(<head.*>)/.exec(html)
   if (match === null) throw Error('Can`t find header tag in request body')
-
   return insert(html, match.index + match[0].length, script)
 }
