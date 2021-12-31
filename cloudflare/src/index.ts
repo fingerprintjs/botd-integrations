@@ -1,4 +1,3 @@
-import { Router } from 'itty-router'
 import Config, { getConfig } from './config'
 import { cloneReqWithURL, isFavicon, isStatic, isInit, isDetect, query } from './utils'
 import { botd, edge, makeCookie, setErrorHeaders } from './detect'
@@ -8,15 +7,14 @@ async function initHandler(req: Request, config: Config): Promise<Response> {
   console.log(`[init] Initial request => starting edge bot detection`)
   await edge(req, config)
 
-  const resp = await fetch(req)
+  let resp = await fetch(req)
   console.log(`[init] Origin response finished with status: ${resp.status}, starting code injection...`)
-  const injected = injectScript(await resp.text(), config)
+  resp = injectScript(resp, config)
 
-  const respWithScript = new Response(injected, resp)
   const cookie = makeCookie(req, config)
   console.log(`[init] Setting cookie ${cookie}`)
-  respWithScript.headers.append('set-cookie', cookie)
-  return respWithScript
+  resp.headers.append('set-cookie', cookie)
+  return resp
 }
 
 async function detectHandler(req: Request, config: Config): Promise<Response> {
@@ -84,7 +82,4 @@ async function allHandler(r: Request): Promise<Response> {
   }
 }
 
-const router = Router()
-router.all('*', allHandler)
-
-addEventListener('fetch', (e) => { e.respondWith(router.handle(e.request)) })
+addEventListener('fetch', (e) => { e.respondWith(allHandler(e.request)) })

@@ -35,10 +35,6 @@ export function query(url: string): string {
   return new URL(url).search
 }
 
-export function insert(src: string, i: number, s: string): string {
-  return src.substr(0, i) + s + src.substr(i);
-}
-
 export function isStatic(req: Request): boolean {
   const STATIC_SEC_FETCH_DEST = ['font', 'script', 'image', 'style', 'video', 'manifest', 'object'] // TODO: add all static types
   const STATIC_PATH_ENDINGS = ['.css', '.js', '.jpg', '.png', '.svg', '.jpeg', '.woff2'] // TODO: add all static types
