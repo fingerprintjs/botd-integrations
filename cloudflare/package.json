@@ -31,7 +31,6 @@
     "eslint-config-typescript": "^3.0.0",
     "prettier": "^2.3.0",
     "psl": "^1.8.0",
-    "ts-jest": "^27.0.1",
     "ts-loader": "^9.2.2",
     "typescript": "^4.3.2",
     "webpack": "^5.38.1",
